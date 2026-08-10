@@ -376,7 +376,32 @@ function Overview({ snapshot, onIssue, onArtifact }: { snapshot: ProjectSnapshot
 
 function DependencyFlow({ issues, onIssue }: { issues: Issue[]; onIssue: (issue: Issue) => void }) {
   const ordered = [...issues].sort((a, b) => a.key.localeCompare(b.key));
-  return <div className="dependency-flow">{ordered.map((issue, index) => <div className="dependency-item" key={issue.id}>{index > 0 && <span className="connector">→</span>}<button className={`issue-node node-${issue.displayState}`} onClick={() => onIssue(issue)}><div><span>{issue.key}</span><StatePill state={issue.displayState} /></div><strong>{issue.title}</strong><small>{issue.affectedModules.join(" · ")}</small>{issue.blockedBy.length > 0 && <em>{issue.blockedBy.length} dependenc{issue.blockedBy.length === 1 ? "y" : "ies"}</em>}</button></div>)}</div>;
+  if (!ordered.length) return <div className="empty" style={{ padding: "1.5rem" }}>No issues in this view.</div>;
+
+  return (
+    <div className="work-table" style={{ marginTop: "0.5rem" }}>
+      <div className="table-row table-head">
+        <span>Issue</span>
+        <span>State</span>
+        <span>Blocked By (Upstream)</span>
+        <span>Blocks (Downstream)</span>
+        <span>Modules</span>
+      </div>
+      {ordered.map((issue) => {
+        const blockers = issue.blockedBy.map((id) => issues.find((item) => item.id === id)?.key).filter(Boolean);
+        const dependents = issues.filter((item) => item.blockedBy.includes(issue.id)).map((item) => item.key);
+        return (
+          <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)}>
+            <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
+            <span><StatePill state={issue.displayState} /></span>
+            <span>{blockers.length ? <strong style={{ color: "var(--color-amber)" }}>⚠️ {blockers.join(", ")}</strong> : <span style={{ color: "var(--color-mint)" }}>✓ None</span>}</span>
+            <span>{dependents.length ? <strong>➔ {dependents.join(", ")}</strong> : "—"}</span>
+            <span>{issue.affectedModules.join(", ") || "—"}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function Attention({ snapshot, onReviewIssue, onArtifact, onOpenCycles, onDecision }: { snapshot: ProjectSnapshot; onReviewIssue: (issue: Issue) => void; onArtifact: (artifact: SnapshotArtifact) => void; onOpenCycles: () => void; onDecision: (requestId: string, outcome: "approved" | "changes_requested") => Promise<void> }) {
