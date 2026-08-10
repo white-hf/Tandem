@@ -389,6 +389,7 @@ function Roadmap({ snapshot }: { snapshot: ProjectSnapshot }) {
 
 function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: (issue: Issue) => void }) {
   const [showPropose, setShowPropose] = useState(false);
+  const [selectedCycleId, setSelectedCycleId] = useState<string>();
   const [cycleForm, setCycleForm] = useState({ name: "", goal: "", startsOn: "", endsOn: "", dod: "" });
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
@@ -461,24 +462,45 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
         </form>
       )}
 
-      {!snapshot.cycle ? (
-        <>
-          <div className="page-intro"><span className="section-kicker">OPTIONAL TIMEBOX</span><h2>No active Cycle</h2><p>This Project can deliver backlog and Quick Work directly. Humans or Agents may propose a Cycle when dependencies or a shared goal benefit from a timebox.</p></div>
-          {proposed.length > 0 && <section className="proposed-cycles">{proposed.map((cycle) => <article className="card" key={cycle.id}><span className="section-kicker">PROPOSED CYCLE {cycle.number}</span><h3>{cycle.name}</h3><p>{cycle.goal}</p><StatePill state={cycle.state} /></article>)}</section>}
-          <section className="card graph-card"><header><h3>Unscheduled delivery graph</h3><span>{snapshot.issues.filter((issue) => issue.displayState === "ready").length} ready</span></header><DependencyFlow issues={snapshot.issues.filter((issue) => !issue.cycleId)} onIssue={onIssue} /></section>
-        </>
-      ) : (
-        <>
-          <div className="page-intro split">
-            <div><span className="section-kicker">CYCLE {snapshot.cycle.number} · ACTIVE</span><h2>{snapshot.cycle.name}</h2><p>{snapshot.cycle.goal}</p></div>
-            <div className="revision-chip">Plan revision <strong>{snapshot.cycle.planRevision}</strong><small>{snapshot.cycle.planDigest.slice(0, 8)}</small></div>
-          </div>
-          {proposed.length > 0 && <section className="proposed-cycles">{proposed.map((cycle) => <article className="card" key={cycle.id}><span className="section-kicker">PROPOSED CYCLE {cycle.number}</span><h3>{cycle.name}</h3><p>{cycle.goal}</p><StatePill state={cycle.state} /></article>)}</section>}
-          <section className="card graph-card"><header><h3>Issue dependency graph</h3><span>{snapshot.issues.filter((i) => i.cycleId === snapshot.cycle?.id && i.displayState === "ready").length} ready to start</span></header><DependencyFlow issues={snapshot.issues.filter((i) => i.cycleId === snapshot.cycle?.id)} onIssue={onIssue} /></section>
-          <section className="card"><header><h3>Definition of Done (DoD)</h3></header><ul className="check-list">{snapshot.cycle.definitionOfDone.map((item) => <li key={item}><span>○</span>{item}</li>)}</ul></section>
-          <section className="card"><header><h3>Sprint Work Items ({snapshot.issues.filter((i) => i.cycleId === snapshot.cycle?.id).length})</h3></header><div className="work-table">{snapshot.issues.filter((i) => i.cycleId === snapshot.cycle?.id).map((issue) => <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)}><span><b>{issue.key}</b><strong>{issue.title}</strong></span><span>{titleCase(issue.type)}</span><span><StatePill state={issue.displayState} /></span><span>{issue.affectedModules.join(", ") || "—"}</span></button>)}</div></section>
-        </>
+      {snapshot.cycles.length > 0 && (
+        <div className="segmented-control" style={{ marginBottom: "1.5rem" }}>
+          {snapshot.cycles.map((c) => (
+            <button
+              type="button"
+              key={c.id}
+              className={(selectedCycleId ?? snapshot.cycle?.id) === c.id ? "active" : ""}
+              onClick={() => setSelectedCycleId(c.id)}
+            >
+              Cycle {c.number}: {c.name.split(":")[0]} ({c.state})
+            </button>
+          ))}
+        </div>
       )}
+
+      {(() => {
+        const currentCycle = snapshot.cycles.find(c => c.id === (selectedCycleId ?? snapshot.cycle?.id)) ?? snapshot.cycle;
+        if (!currentCycle) {
+          return (
+            <>
+              <div className="page-intro"><span className="section-kicker">OPTIONAL TIMEBOX</span><h2>No active Cycle</h2><p>This Project can deliver backlog and Quick Work directly. Humans or Agents may propose a Cycle when dependencies or a shared goal benefit from a timebox.</p></div>
+              {proposed.length > 0 && <section className="proposed-cycles">{proposed.map((cycle) => <article className="card" key={cycle.id}><span className="section-kicker">PROPOSED CYCLE {cycle.number}</span><h3>{cycle.name}</h3><p>{cycle.goal}</p><StatePill state={cycle.state} /></article>)}</section>}
+              <section className="card graph-card"><header><h3>Unscheduled delivery graph</h3><span>{snapshot.issues.filter((issue) => issue.displayState === "ready").length} ready</span></header><DependencyFlow issues={snapshot.issues.filter((issue) => !issue.cycleId)} onIssue={onIssue} /></section>
+            </>
+          );
+        }
+        return (
+          <>
+            <div className="page-intro split">
+              <div><span className="section-kicker">CYCLE {currentCycle.number} · {currentCycle.state.toUpperCase()}</span><h2>{currentCycle.name}</h2><p>{currentCycle.goal}</p></div>
+              <div className="revision-chip">Plan revision <strong>{currentCycle.planRevision}</strong><small>{currentCycle.planDigest.slice(0, 8)}</small></div>
+            </div>
+            {proposed.length > 0 && <section className="proposed-cycles">{proposed.map((cycle) => <article className="card" key={cycle.id}><span className="section-kicker">PROPOSED CYCLE {cycle.number}</span><h3>{cycle.name}</h3><p>{cycle.goal}</p><StatePill state={cycle.state} /></article>)}</section>}
+            <section className="card graph-card"><header><h3>Issue dependency graph</h3><span>{snapshot.issues.filter((i) => i.cycleId === currentCycle.id && i.displayState === "ready").length} ready to start</span></header><DependencyFlow issues={snapshot.issues.filter((i) => i.cycleId === currentCycle.id)} onIssue={onIssue} /></section>
+            <section className="card"><header><h3>Definition of Done (DoD)</h3></header><ul className="check-list">{currentCycle.definitionOfDone.map((item) => <li key={item}><span>○</span>{item}</li>)}</ul></section>
+            <section className="card"><header><h3>Sprint Work Items ({snapshot.issues.filter((i) => i.cycleId === currentCycle.id).length})</h3></header><div className="work-table">{snapshot.issues.filter((i) => i.cycleId === currentCycle.id).map((issue) => <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)}><span><b>{issue.key}</b><strong>{issue.title}</strong></span><span>{titleCase(issue.type)}</span><span><StatePill state={issue.displayState} /></span><span>{issue.affectedModules.join(", ") || "—"}</span></button>)}</div></section>
+          </>
+        );
+      })()}
     </section>
   );
 }
