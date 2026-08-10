@@ -1,0 +1,71 @@
+name: tandem-pilot
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: tandem
+      POSTGRES_USER: tandem
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.pilot}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tandem -d tandem"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - tandem_pilot_postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4310
+      TANDEM_STORAGE: postgres
+      TANDEM_AUTH_MODE: ${TANDEM_AUTH_MODE:-tokens}
+      TANDEM_SEED_DEMO: "false"
+      DATABASE_URL: postgresql://tandem:${POSTGRES_PASSWORD}@postgres:5432/tandem
+      TANDEM_HUMAN_TOKEN: ${TANDEM_HUMAN_TOKEN:?Set a 32+ character Human token}
+      TANDEM_AGENT_TOKEN: ${TANDEM_AGENT_TOKEN:-}
+      TANDEM_BOOTSTRAP_IDENTITIES: ${TANDEM_BOOTSTRAP_IDENTITIES:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      TANDEM_AUTHORIZATION_SERVER: ${TANDEM_AUTHORIZATION_SERVER:-}
+      TANDEM_OAUTH_INTROSPECTION_URL: ${TANDEM_OAUTH_INTROSPECTION_URL:-}
+      TANDEM_OAUTH_CLIENT_ID: ${TANDEM_OAUTH_CLIENT_ID:-}
+      TANDEM_OAUTH_CLIENT_SECRET: ${TANDEM_OAUTH_CLIENT_SECRET:-}
+      TANDEM_REQUIRE_REMOTE_OAUTH: ${TANDEM_REQUIRE_REMOTE_OAUTH:-false}
+    ports:
+      - "127.0.0.1:4310:4310"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4310/ready').then(r=>{if(!r.ok)process.exit(1)})"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "127.0.0.1:4311:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/var/cache/nginx, /var/run]
+    security_opt: ["no-new-privileges:true"]
+
+volumes:
+  tandem_pilot_postgres:

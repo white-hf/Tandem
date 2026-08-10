@@ -1,0 +1,23 @@
+{
+  "name": "@tandem/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp -R migrations dist/migrations",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "migrate": "tsx src/migrate.ts"
+  },
+  "dependencies": {
+    "@tandem/contracts": "workspace:*",
+    "@tandem/domain": "workspace:*",
+    "drizzle-orm": "1.0.0-rc.4",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "drizzle-kit": "1.0.0-rc.4",
+    "vitest": "^3.2.4"
+  }
+}

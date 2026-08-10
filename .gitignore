@@ -1,0 +1,16 @@
+.DS_Store
+*.log
+*.tsbuildinfo
+
+node_modules/
+.turbo/
+.vite/
+dist/
+coverage/
+playwright-report/
+test-results/
+.tandem/
+
+.env
+.env.*
+!.env.example

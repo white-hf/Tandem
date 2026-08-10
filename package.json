@@ -1,0 +1,27 @@
+{
+  "name": "tandem",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.15.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @tandem/api --filter @tandem/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --if-present test",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "demo:agent": "tsx scripts/agent-workflow.ts",
+    "demo:planning": "tsx scripts/planning-workflow.ts",
+    "demo:mcp": "pnpm --filter @tandem/api mcp:smoke",
+    "demo:quick:mcp": "pnpm --filter @tandem/api mcp:quick",
+    "reconcile:github": "tsx scripts/reconcile-github.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}

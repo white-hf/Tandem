@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "tandem": {
+      "url": "http://127.0.0.1:4310/mcp",
+      "type": "http",
+      "headers": {
+        "Authorization": "Bearer ${TANDEM_AGENT_TOKEN}"
+      }
+    }
+  }
+}
