@@ -463,17 +463,21 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
       )}
 
       {snapshot.cycles.length > 0 && (
-        <div className="segmented-control" style={{ marginBottom: "1.5rem" }}>
-          {snapshot.cycles.map((c) => (
-            <button
-              type="button"
-              key={c.id}
-              className={(selectedCycleId ?? snapshot.cycle?.id) === c.id ? "active" : ""}
-              onClick={() => setSelectedCycleId(c.id)}
+        <div className="card" style={{ padding: "0.75rem 1rem", marginBottom: "1.5rem", display: "flex", gap: "1rem", alignItems: "center" }}>
+          <label style={{ margin: 0, fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem", flex: 1 }}>
+            <span>Select Iteration / Cycle:</span>
+            <select
+              style={{ padding: "0.4rem 0.75rem", borderRadius: "6px", border: "1px solid var(--color-border)", background: "var(--color-bg)", color: "var(--color-text)", fontSize: "0.9rem", flex: 1 }}
+              value={selectedCycleId ?? snapshot.cycle?.id ?? snapshot.cycles[0]?.id}
+              onChange={(e) => setSelectedCycleId(e.target.value)}
             >
-              Cycle {c.number}: {c.name.split(":")[0]} ({c.state})
-            </button>
-          ))}
+              {snapshot.cycles.map((c) => (
+                <option key={c.id} value={c.id}>
+                  Cycle {c.number}: {c.name} [{c.state.toUpperCase()}] ({c.startsOn ?? "No start"} ~ {c.endsOn ?? "No end"})
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       )}
 
