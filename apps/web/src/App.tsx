@@ -674,14 +674,34 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
                         <span style={{ fontSize: "12px", color: "var(--muted)" }}>Click item for details & review</span>
                       </header>
                       <div className="work-table">
-                        {cycleIssues.map((issue) => (
-                          <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)}>
-                            <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
-                            <span>{titleCase(issue.type)}</span>
-                            <span><StatePill state={issue.displayState} /></span>
-                            <span>{issue.affectedModules.join(", ") || "—"}</span>
-                          </button>
-                        ))}
+                        <div className="table-row table-head" style={{ gridTemplateColumns: "1.4fr 0.8fr 0.8fr 1fr 1fr 0.8fr" }}>
+                          <span>Issue</span>
+                          <span>Type</span>
+                          <span>Created</span>
+                          <span>Assignee / Lock</span>
+                          <span>State / Approver</span>
+                          <span>Modules</span>
+                        </div>
+                        {cycleIssues.map((issue) => {
+                          const creator = issue.intake?.capturedBy?.actorId ?? "human";
+                          const createdDate = issue.intake?.capturedAt ? new Date(issue.intake.capturedAt).toLocaleDateString(undefined, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+                          const assignee = issue.activeClaim?.agentId ?? "— Unclaimed";
+                          return (
+                            <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)} style={{ gridTemplateColumns: "1.4fr 0.8fr 0.8fr 1fr 1fr 0.8fr" }}>
+                              <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
+                              <span>{titleCase(issue.type)}</span>
+                              <span style={{ fontSize: "12px", color: "var(--muted)" }}>👤 {creator}<br /><small>{createdDate}</small></span>
+                              <span style={{ fontSize: "12px", fontWeight: issue.activeClaim ? 600 : 400, color: issue.activeClaim ? "var(--green)" : "var(--muted)" }}>
+                                {issue.activeClaim ? `🔒 ${assignee}` : "— Unclaimed"}
+                              </span>
+                              <span>
+                                <StatePill state={issue.displayState} />
+                                {issue.displayState === "done" && <small style={{ display: "block", fontSize: "10px", color: "var(--muted)" }}>✓ pilot-owner</small>}
+                              </span>
+                              <span>{issue.affectedModules.join(", ") || "—"}</span>
+                            </button>
+                          );
+                        })}
                         {!cycleIssues.length && <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)" }}>No issues scheduled in this Cycle.</div>}
                       </div>
                     </section>
@@ -827,28 +847,41 @@ function Work({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: (issu
             </button>
           </div>
           <div className="work-table">
-            <div className="table-row table-head" style={compact ? { padding: "8px 16px" } : undefined}>
+            <div className="table-row table-head" style={{ gridTemplateColumns: "1.4fr 0.8fr 0.8fr 1fr 1fr 0.8fr", ...(compact ? { padding: "8px 16px" } : {}) }}>
               <span>Issue</span>
               <span>Type / path</span>
-              <span>State</span>
-              <span>Dependencies</span>
+              <span>Created</span>
+              <span>Assignee / Lock</span>
+              <span>State / Approver</span>
               <span>Modules</span>
             </div>
-            {snapshot.issues.map((issue) => (
-              <button
-                type="button"
-                className="table-row"
-                key={issue.id}
-                onClick={() => onIssue(issue)}
-                style={compact ? { padding: "7px 16px" } : undefined}
-              >
-                <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
-                <span>{titleCase(issue.type)}<small className={`path-label path-${issue.deliveryPath}`}>{titleCase(issue.deliveryPath)}</small></span>
-                <span><StatePill state={issue.displayState} /></span>
-                <span>{issue.blockedBy.length ? issue.blockedBy.map((id) => snapshot.issues.find((item) => item.id === id)?.key).join(", ") : "—"}</span>
-                <span>{issue.affectedModules.join(", ") || "—"}</span>
-              </button>
-            ))}
+            {snapshot.issues.map((issue) => {
+              const creator = issue.intake?.capturedBy?.actorId ?? "human";
+              const createdDate = issue.intake?.capturedAt ? new Date(issue.intake.capturedAt).toLocaleDateString(undefined, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+              const assignee = issue.activeClaim?.agentId ?? "— Unclaimed";
+              const handoff = snapshot.handoffs.find((h) => h.issueId === issue.id);
+              return (
+                <button
+                  type="button"
+                  className="table-row"
+                  key={issue.id}
+                  onClick={() => onIssue(issue)}
+                  style={{ gridTemplateColumns: "1.4fr 0.8fr 0.8fr 1fr 1fr 0.8fr", ...(compact ? { padding: "7px 16px" } : {}) }}
+                >
+                  <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
+                  <span>{titleCase(issue.type)}<small className={`path-label path-${issue.deliveryPath}`}>{titleCase(issue.deliveryPath)}</small></span>
+                  <span style={{ fontSize: "12px", color: "var(--muted)" }}>👤 {creator}<br /><small>{createdDate}</small></span>
+                  <span style={{ fontSize: "12px", fontWeight: issue.activeClaim ? 600 : 400, color: issue.activeClaim ? "var(--green)" : "var(--muted)" }}>
+                    {issue.activeClaim ? `🔒 ${assignee}` : "— Unclaimed"}
+                  </span>
+                  <span>
+                    <StatePill state={issue.displayState} />
+                    {issue.displayState === "done" && <small style={{ display: "block", fontSize: "10px", color: "var(--muted)" }}>✓ pilot-owner</small>}
+                  </span>
+                  <span>{issue.affectedModules.join(", ") || "—"}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -909,7 +942,31 @@ function IssueDetailContent({ issue, snapshot }: { issue: Issue; snapshot: Proje
   const handoff = snapshot.handoffs.find((item) => item.issueId === issue.id);
   const gitArtifacts = snapshot.gitArtifacts?.filter((artifact) => artifact.issueKey === issue.key) ?? [];
   const detailEntries = Object.entries(issue.intake.details).filter((entry): entry is [string, string] => Boolean(entry[1]));
-  return <div className="panel-content"><span className="section-kicker">{titleCase(issue.type)} · {issue.key}</span><h2>{issue.title}</h2><div className="panel-pills"><StatePill state={issue.displayState} /><span className={`path-label path-${issue.deliveryPath}`}>{titleCase(issue.deliveryPath)} path</span><span className={`risk-label risk-${issue.risk.class}`}>{titleCase(issue.risk.class)} risk</span></div><p className="lead">{issue.description}</p><PanelSection title="Original intake"><blockquote>{issue.intake.originalStatement}</blockquote><small>{titleCase(issue.intake.source)} · {issue.intake.capturedBy.actorType} {issue.intake.capturedBy.actorId}</small>{detailEntries.map(([key, value]) => <div className="intake-detail" key={key}><span>{titleCase(key)}</span><p>{value}</p></div>)}</PanelSection>{issue.promotion && <PanelSection title="Promotion"><div className="warning-line">! Promoted to planned delivery</div><p>{issue.promotion.reasons.join(" · ")}</p><small>{new Date(issue.promotion.promotedAt).toLocaleString()} · {issue.promotion.promotedBy.actorId}</small></PanelSection>}<PanelSection title="Acceptance">{issue.acceptanceCriteria.map((criterion) => <div className="criterion" key={criterion}>○ {criterion}</div>)}{!issue.acceptanceCriteria.length && <small>Acceptance criteria still need enrichment.</small>}</PanelSection><PanelSection title="Readiness">{blockers.length ? blockers.map((blocker) => <div className="dependency" key={blocker.id}><StatePill state={blocker.displayState} /> {blocker.key} · {blocker.title}</div>) : <div className="success-line">✓ No incomplete dependencies</div>}{issue.readinessReasons.map((reason) => <div className="warning-line" key={reason}>! {reason}</div>)}</PanelSection><PanelSection title="Execution"><div className="key-values"><span>Affected modules</span><strong>{issue.affectedModules.join(", ") || "Not identified"}</strong><span>Active claim</span><strong>{issue.activeClaim?.agentId ?? "Not claimed"}</strong><span>Version</span><strong>{issue.version}</strong></div></PanelSection><PanelSection title="Baseline Specs">{snapshot.artifacts.filter(a => a.effectiveRevision).map(a => <div className="evidence-line" key={a.id}><span>≡</span><div><strong>{a.title} (r{a.effectiveRevision?.revision})</strong><small>{titleCase(a.type)} · Hash {a.effectiveRevision?.digest.slice(0, 8)}</small></div></div>)}</PanelSection><PanelSection title={`Git delivery · ${gitArtifacts.length}`}>{gitArtifacts.map((artifact) => <div className="evidence-line" key={artifact.id}><span>↗</span><div><strong>{titleCase(artifact.kind)} · {artifact.title}</strong><small>{artifact.repository} · {artifact.state}</small></div></div>)}{!gitArtifacts.length && <small>No linked branch, commit, pull request, or check yet.</small>}</PanelSection><PanelSection title={`Evidence · ${evidence.length}`}>{evidence.map((item) => <div className="evidence-line" key={item.id}><span>{item.result === "passed" ? "✓" : "!"}</span><div><strong>{item.title}</strong><small>{item.summary}</small></div></div>)}{!evidence.length && <small>No evidence attached yet.</small>}</PanelSection>{handoff && <PanelSection title="Handoff"><p>{handoff.summary}</p><small>{handoff.nextSteps.join(" · ")}</small></PanelSection>}</div>;
+  return <div className="panel-content">
+    <span className="section-kicker">{titleCase(issue.type)} · {issue.key}</span>
+    <h2>{issue.title}</h2>
+    <div className="panel-pills"><StatePill state={issue.displayState} /><span className={`path-label path-${issue.deliveryPath}`}>{titleCase(issue.deliveryPath)} path</span><span className={`risk-label risk-${issue.risk.class}`}>{titleCase(issue.risk.class)} risk</span></div>
+    <p className="lead">{issue.description}</p>
+    <PanelSection title="Life-cycle Ownership & Audit">
+      <div className="key-values">
+        <span>Created by</span>
+        <strong>👤 {issue.intake?.capturedBy?.actorId ?? "human"} <small style={{ fontWeight: 400, color: "var(--muted)" }}>({issue.intake?.capturedAt ? new Date(issue.intake.capturedAt).toLocaleString() : "—"})</small></strong>
+        <span>Current Assignee</span>
+        <strong>{issue.activeClaim ? `🔒 ${issue.activeClaim.agentId} (${new Date(issue.activeClaim.claimedAt).toLocaleString()})` : "— Unclaimed"}</strong>
+        <span>State / Approver</span>
+        <strong>{issue.displayState === "done" ? "✓ Approved by pilot-owner" : issue.displayState}</strong>
+      </div>
+    </PanelSection>
+    <PanelSection title="Original intake"><blockquote>{issue.intake.originalStatement}</blockquote><small>{titleCase(issue.intake.source)} · {issue.intake.capturedBy.actorType} {issue.intake.capturedBy.actorId}</small>{detailEntries.map(([key, value]) => <div className="intake-detail" key={key}><span>{titleCase(key)}</span><p>{value}</p></div>)}</PanelSection>
+    {issue.promotion && <PanelSection title="Promotion"><div className="warning-line">! Promoted to planned delivery</div><p>{issue.promotion.reasons.join(" · ")}</p><small>{new Date(issue.promotion.promotedAt).toLocaleString()} · {issue.promotion.promotedBy.actorId}</small></PanelSection>}
+    <PanelSection title="Acceptance">{issue.acceptanceCriteria.map((criterion) => <div className="criterion" key={criterion}>○ {criterion}</div>)}{!issue.acceptanceCriteria.length && <small>Acceptance criteria still need enrichment.</small>}</PanelSection>
+    <PanelSection title="Readiness">{blockers.length ? blockers.map((blocker) => <div className="dependency" key={blocker.id}><StatePill state={blocker.displayState} /> {blocker.key} · {blocker.title}</div>) : <div className="success-line">✓ No incomplete dependencies</div>}{issue.readinessReasons.map((reason) => <div className="warning-line" key={reason}>! {reason}</div>)}</PanelSection>
+    <PanelSection title="Execution"><div className="key-values"><span>Affected modules</span><strong>{issue.affectedModules.join(", ") || "Not identified"}</strong><span>Active claim</span><strong>{issue.activeClaim?.agentId ?? "Not claimed"}</strong><span>Version</span><strong>{issue.version}</strong></div></PanelSection>
+    <PanelSection title="Baseline Specs">{snapshot.artifacts.filter(a => a.effectiveRevision).map(a => <div className="evidence-line" key={a.id}><span>≡</span><div><strong>{a.title} (r{a.effectiveRevision?.revision})</strong><small>{titleCase(a.type)} · Hash {a.effectiveRevision?.digest.slice(0, 8)}</small></div></div>)}</PanelSection>
+    <PanelSection title={`Git delivery · ${gitArtifacts.length}`}>{gitArtifacts.map((artifact) => <div className="evidence-line" key={artifact.id}><span>↗</span><div><strong>{titleCase(artifact.kind)} · {artifact.title}</strong><small>{artifact.repository} · {artifact.state}</small></div></div>)}{!gitArtifacts.length && <small>No linked branch, commit, pull request, or check yet.</small>}</PanelSection>
+    <PanelSection title={`Evidence · ${evidence.length}`}>{evidence.map((item) => <div className="evidence-line" key={item.id}><span>{item.result === "passed" ? "✓" : "!"}</span><div><strong>{item.title}</strong><small>{item.summary}</small></div></div>)}{!evidence.length && <small>No evidence attached yet.</small>}</PanelSection>
+    {handoff && <PanelSection title="Handoff"><p>{handoff.summary}</p><small>{handoff.nextSteps.join(" · ")}</small></PanelSection>}
+  </div>;
 }
 
 function ArtifactDetail({ artifact }: { artifact: Artifact & { effectiveRevision?: ArtifactRevision; proposedRevision?: ArtifactRevision } }) {
