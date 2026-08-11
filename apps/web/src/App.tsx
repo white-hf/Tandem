@@ -207,6 +207,17 @@ export function App() {
     window.history.replaceState({}, "", `/projects/${snapshot.project.key}`);
   };
 
+  const logout = async () => {
+    try {
+      await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" });
+    } catch {
+      // Ignore network errors on logout
+    }
+    setAuthRequired(true);
+    setSnapshot(undefined);
+    setProjects(undefined);
+  };
+
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -258,7 +269,26 @@ export function App() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-footer"><span className="connection-dot" /> Authenticated workspace<span>Connected</span></div>
+        <div className="sidebar-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <span className="connection-dot" /> Authenticated
+          </div>
+          <button
+            type="button"
+            onClick={() => void logout()}
+            style={{
+              background: "none",
+              border: "1px solid #374740",
+              color: "#9ca9a2",
+              padding: "3px 8px",
+              borderRadius: "5px",
+              fontSize: "12px",
+              cursor: "pointer"
+            }}
+          >
+            Sign Out
+          </button>
+        </div>
       </aside>
 
       <main className="main">
@@ -267,7 +297,20 @@ export function App() {
             <span className="eyebrow">{view === "work" ? "BOARD & WORK" : view === "artifacts" ? "BASELINES & ARTIFACTS" : view === "activity" ? "ACTIVITY & SESSIONS" : view === "settings" ? "PEOPLE & SECURITY" : view.toUpperCase()}</span>
             <h1>{view === "work" ? "Board & Work" : view === "artifacts" ? "Baselines & Artifacts" : view === "activity" ? "Activity & Sessions" : view === "settings" ? "People & Security" : titleCase(view)}</h1>
           </div>
-          <div className="top-actions"><button className="quick-add-button" onClick={() => setQuickAddOpen(true)}>＋ Quick Add</button><button className="refresh" onClick={() => void load(selectedProjectKey)}>↻ <span>Refresh</span></button><span className="human-avatar">WT</span></div>
+          <div className="top-actions">
+            <button className="quick-add-button" onClick={() => setQuickAddOpen(true)}>＋ Quick Add</button>
+            <button className="refresh" onClick={() => void load(selectedProjectKey)}>↻ <span>Refresh</span></button>
+            <button
+              type="button"
+              className="refresh"
+              onClick={() => void logout()}
+              title="Sign Out"
+              style={{ color: "#a1423e" }}
+            >
+              Sign Out ↳
+            </button>
+            <span className="human-avatar">WT</span>
+          </div>
         </header>
 
         <div className="content">
