@@ -1325,7 +1325,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
               </span>
               <span><StatePill state={p.status} /></span>
               <span>{p.roles.join(", ")}</span>
-              <span style={{ display: "flex", gap: "6px" }}>
+              <span style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
                 {p.type === "agent" && (
                   <>
                     <button
@@ -1335,7 +1335,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
                       onClick={() => void regenerateAgentToken(p.id, p.displayName)}
                       title="Issue a fresh Token & Copy Config Panel for this Agent"
                     >
-                      🔑 Regenerate Token & Config
+                      🔑 New Token
                     </button>
                     <button
                       type="button"
@@ -1344,7 +1344,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
                       onClick={() => copyAgentMcpConfig(p.displayName)}
                       title="Copy Endpoint URL and JSON Template"
                     >
-                      📋 Copy MCP Template
+                      📋 Copy Config
                     </button>
                   </>
                 )}
@@ -1355,7 +1355,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
                     style={{ padding: "2px 8px", fontSize: "0.8rem" }}
                     onClick={() => { setEditingId(p.id); setEditName(p.displayName); }}
                   >
-                    ✏️ Edit Name
+                    ✏️ Edit
                   </button>
                 )}
                 {p.status === "active" ? (
