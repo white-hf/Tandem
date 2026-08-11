@@ -49,7 +49,7 @@ if (authMode === "development") {
     : bootstrapIdentitiesSchema.parse([
       {
         id: "pilot-owner", type: "human", displayName: "Pilot Owner", roles: ["owner"], projectKeys: ["*"],
-        capabilities: ["context:read", "artifact:write", "planning:write", "execution:write", "decision:request", "decision:resolve"],
+        capabilities: ["context:read", "artifact:write", "planning:write", "execution:write", "decision:request", "decision:resolve", "identity:admin"],
         token: process.env.TANDEM_HUMAN_TOKEN,
       },
       {
