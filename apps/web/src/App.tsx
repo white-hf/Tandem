@@ -37,6 +37,7 @@ export function App() {
   const [selectedArtifact, setSelectedArtifact] = useState<SnapshotArtifact>();
   const [verificationMode, setVerificationMode] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [showCreateProject, setShowCreateProject] = useState(false);
 
   const load = async (preferredProjectKey?: string) => {
     try {
@@ -210,7 +211,44 @@ export function App() {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand"><div className="brand-mark">T</div><div><strong>Tandem</strong><span>Agent-first delivery</span></div></div>
-        <label className="workspace-switcher" htmlFor="project-switcher"><span className="avatar">{snapshot.project.key.slice(0, 2)}</span><div><strong>{snapshot.project.name}</strong><span>{projects.length} Project{projects.length === 1 ? "" : "s"} · Agent-first team</span></div><select id="project-switcher" value={selectedProjectKey} onChange={(event) => void load(event.target.value)} aria-label="Select Project">{projects.map((project) => <option key={project.id} value={project.key}>{project.key} · {project.name}</option>)}</select></label>
+        <div className="workspace-switcher-container" style={{ marginBottom: "1.5rem" }}>
+          <div className="workspace-switcher" style={{ position: "relative", cursor: "pointer" }}>
+            <span className="avatar">{snapshot.project.key.slice(0, 2)}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <strong>{snapshot.project.name}</strong>
+              <span style={{ fontSize: "12px", color: "#92a099" }}>{projects.length} Project{projects.length === 1 ? "" : "s"} · Switch ▾</span>
+            </div>
+            <select
+              id="project-switcher"
+              aria-label="Select Project"
+              value={selectedProjectKey}
+              onChange={(event) => {
+                if (event.target.value === "__NEW__") {
+                  setShowCreateProject(true);
+                } else {
+                  void load(event.target.value);
+                }
+              }}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                opacity: 0,
+                cursor: "pointer"
+              }}
+            >
+              {projects.map((project) => (
+                <option key={project.id} value={project.key} style={{ color: "#18201c", background: "#fff" }}>
+                  {project.key} · {project.name}
+                </option>
+              ))}
+              <option value="__NEW__" style={{ color: "#276b50", fontWeight: "bold", background: "#fff" }}>
+                ＋ Create New Project...
+              </option>
+            </select>
+          </div>
+        </div>
         <nav aria-label="Primary navigation">
           <p className="nav-label">Workspace</p>
           {nav.map((item) => (
@@ -256,6 +294,14 @@ export function App() {
         </aside>
       )}
       {quickAddOpen && <QuickAdd projectKey={snapshot.project.key} onClose={() => setQuickAddOpen(false)} onCreated={async (issue) => { setQuickAddOpen(false); await load(snapshot.project.key); setSelectedIssue(issue); }} />}
+      {showCreateProject && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowCreateProject(false); }}>
+          <div className="quick-modal" style={{ maxWidth: "800px", padding: 0 }}>
+            <button className="close" onClick={() => setShowCreateProject(false)} style={{ zIndex: 10 }}>×</button>
+            <ProjectSetup onCreated={async (newKey) => { setShowCreateProject(false); await load(newKey); }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
