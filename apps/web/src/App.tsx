@@ -38,6 +38,7 @@ export function App() {
   const [verificationMode, setVerificationMode] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
+  const [drawerExpanded, setDrawerExpanded] = useState(false);
 
   const load = async (preferredProjectKey?: string) => {
     try {
@@ -298,6 +299,19 @@ export function App() {
             <h1>{view === "work" ? "Board & Work" : view === "artifacts" ? "Baselines & Artifacts" : view === "activity" ? "Activity & Sessions" : view === "settings" ? "People & Security" : titleCase(view)}</h1>
           </div>
           <div className="top-actions">
+            <button
+              type="button"
+              className="refresh"
+              onClick={() => {
+                const mcpSnippet = `http://127.0.0.1:4310/mcp`;
+                void navigator.clipboard.writeText(mcpSnippet);
+                alert("Copied MCP Endpoint: http://127.0.0.1:4310/mcp");
+              }}
+              title="Copy MCP Endpoint for Agent Onboarding"
+              style={{ color: "var(--green)", fontWeight: 600 }}
+            >
+              📋 MCP Endpoint
+            </button>
             <button className="quick-add-button" onClick={() => setQuickAddOpen(true)}>＋ Quick Add</button>
             <button className="refresh" onClick={() => void load(selectedProjectKey)}>↻ <span>Refresh</span></button>
             <button
@@ -330,8 +344,31 @@ export function App() {
       </main>
 
       {(selectedIssue || selectedArtifact) && (
-        <aside className={`detail-panel${verificationMode ? " verification-panel" : ""}`} aria-label={verificationMode ? "Human Verification" : "Detail panel"}>
-          <button className="close" onClick={() => { setSelectedIssue(undefined); setSelectedArtifact(undefined); setVerificationMode(false); window.history.replaceState({}, "", `/projects/${snapshot.project.key}`); }} aria-label="Close details">×</button>
+        <aside
+          className={`detail-panel${verificationMode ? " verification-panel" : ""}`}
+          style={drawerExpanded ? { width: "calc(100vw - 246px)", maxWidth: "none" } : undefined}
+          aria-label={verificationMode ? "Human Verification" : "Detail panel"}
+        >
+          <div style={{ position: "sticky", top: "14px", right: "14px", float: "right", display: "flex", gap: "6px", zIndex: 10 }}>
+            <button
+              type="button"
+              className="close"
+              style={{ position: "static", float: "none" }}
+              onClick={() => setDrawerExpanded(!drawerExpanded)}
+              title={drawerExpanded ? "Collapse width" : "Expand width"}
+            >
+              {drawerExpanded ? " ↙ " : " ↗ "}
+            </button>
+            <button
+              type="button"
+              className="close"
+              style={{ position: "static", float: "none" }}
+              onClick={() => { setSelectedIssue(undefined); setSelectedArtifact(undefined); setVerificationMode(false); setDrawerExpanded(false); window.history.replaceState({}, "", `/projects/${snapshot.project.key}`); }}
+              aria-label="Close details"
+            >
+              ×
+            </button>
+          </div>
           {selectedIssue && <IssueDetail issue={selectedIssue} snapshot={snapshot} verificationMode={verificationMode} onReview={resolveIssueReview} />}
           {selectedArtifact && <ArtifactDetail artifact={selectedArtifact} />}
         </aside>
@@ -625,6 +662,7 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
 
 function Work({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: (issue: Issue) => void }) {
   const [mode, setMode] = useState<"kanban" | "list" | "cycles" | "roadmap">("kanban");
+  const [compact, setCompact] = useState(false);
 
   const columns: Array<{ id: string; title: string; filter: (issue: Issue) => boolean }> = [
     { id: "backlog", title: "Backlog", filter: (i) => i.baseState === "backlog" || i.displayState === "blocked" },
@@ -682,23 +720,42 @@ function Work({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: (issu
       )}
 
       {mode === "list" && (
-        <div className="work-table card">
-          <div className="table-row table-head">
-            <span>Issue</span>
-            <span>Type / path</span>
-            <span>State</span>
-            <span>Dependencies</span>
-            <span>Modules</span>
-          </div>
-          {snapshot.issues.map((issue) => (
-            <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)}>
-              <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
-              <span>{titleCase(issue.type)}<small className={`path-label path-${issue.deliveryPath}`}>{titleCase(issue.deliveryPath)}</small></span>
-              <span><StatePill state={issue.displayState} /></span>
-              <span>{issue.blockedBy.length ? issue.blockedBy.map((id) => snapshot.issues.find((item) => item.id === id)?.key).join(", ") : "—"}</span>
-              <span>{issue.affectedModules.join(", ") || "—"}</span>
+        <div className="card">
+          <div style={{ padding: "0.75rem 1rem", borderBottom: "1px solid #ebeeea", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "14px", color: "var(--muted)" }}>Total {snapshot.issues.length} Issues</span>
+            <button
+              type="button"
+              className="refresh"
+              onClick={() => setCompact(!compact)}
+              style={{ fontSize: "12px", height: "28px" }}
+            >
+              Density: {compact ? "Compact ⚡" : "Relaxed ☕"}
             </button>
-          ))}
+          </div>
+          <div className="work-table">
+            <div className="table-row table-head" style={compact ? { padding: "8px 16px" } : undefined}>
+              <span>Issue</span>
+              <span>Type / path</span>
+              <span>State</span>
+              <span>Dependencies</span>
+              <span>Modules</span>
+            </div>
+            {snapshot.issues.map((issue) => (
+              <button
+                type="button"
+                className="table-row"
+                key={issue.id}
+                onClick={() => onIssue(issue)}
+                style={compact ? { padding: "7px 16px" } : undefined}
+              >
+                <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
+                <span>{titleCase(issue.type)}<small className={`path-label path-${issue.deliveryPath}`}>{titleCase(issue.deliveryPath)}</small></span>
+                <span><StatePill state={issue.displayState} /></span>
+                <span>{issue.blockedBy.length ? issue.blockedBy.map((id) => snapshot.issues.find((item) => item.id === id)?.key).join(", ") : "—"}</span>
+                <span>{issue.affectedModules.join(", ") || "—"}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
