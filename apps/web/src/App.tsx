@@ -650,9 +650,38 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
               <div className="revision-chip">Plan revision <strong>{currentCycle.planRevision}</strong><small>{currentCycle.planDigest.slice(0, 8)}</small></div>
             </div>
             {proposed.length > 0 && <section className="proposed-cycles">{proposed.map((cycle) => <article className="card" key={cycle.id}><span className="section-kicker">PROPOSED CYCLE {cycle.number}</span><h3>{cycle.name}</h3><p>{cycle.goal}</p><StatePill state={cycle.state} /></article>)}</section>}
-            <section className="card graph-card"><header><h3>Issue dependency graph</h3><span>{snapshot.issues.filter((i) => i.cycleId === currentCycle.id && i.displayState === "ready").length} ready to start</span></header><DependencyFlow issues={snapshot.issues.filter((i) => i.cycleId === currentCycle.id)} onIssue={onIssue} /></section>
+            <section className="card graph-card">
+              <header>
+                <h3>Issue dependency graph</h3>
+                <span>{snapshot.issues.filter((i) => i.cycleId === currentCycle.id && i.displayState === "ready").length} ready to start</span>
+              </header>
+              <div style={{ maxHeight: "300px", overflowY: "auto" }}>
+                <DependencyFlow issues={snapshot.issues.filter((i) => i.cycleId === currentCycle.id)} onIssue={onIssue} />
+              </div>
+            </section>
             <section className="card"><header><h3>Definition of Done (DoD)</h3></header><ul className="check-list">{currentCycle.definitionOfDone.map((item) => <li key={item}><span>○</span>{item}</li>)}</ul></section>
-            <section className="card"><header><h3>Sprint Work Items ({snapshot.issues.filter((i) => i.cycleId === currentCycle.id).length})</h3></header><div className="work-table">{snapshot.issues.filter((i) => i.cycleId === currentCycle.id).map((issue) => <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)}><span><b>{issue.key}</b><strong>{issue.title}</strong></span><span>{titleCase(issue.type)}</span><span><StatePill state={issue.displayState} /></span><span>{issue.affectedModules.join(", ") || "—"}</span></button>)}</div></section>
+            {(() => {
+              const cycleIssues = snapshot.issues.filter((i) => i.cycleId === currentCycle.id);
+              return (
+                <section className="card">
+                  <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <h3>Sprint Work Items ({cycleIssues.length})</h3>
+                    <span style={{ fontSize: "12px", color: "var(--muted)" }}>Max 360px scroll container</span>
+                  </header>
+                  <div className="work-table" style={{ maxHeight: "360px", overflowY: "auto" }}>
+                    {cycleIssues.map((issue) => (
+                      <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)}>
+                        <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
+                        <span>{titleCase(issue.type)}</span>
+                        <span><StatePill state={issue.displayState} /></span>
+                        <span>{issue.affectedModules.join(", ") || "—"}</span>
+                      </button>
+                    ))}
+                    {!cycleIssues.length && <div style={{ padding: "1.5rem", textAlign: "center", color: "var(--muted)" }}>No issues scheduled in this Cycle.</div>}
+                  </div>
+                </section>
+              );
+            })()}
           </>
         );
       })()}
