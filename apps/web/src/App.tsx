@@ -544,6 +544,7 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
   const [cycleForm, setCycleForm] = useState({ name: "", goal: "", startsOn: "", endsOn: "", dod: "" });
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
+  const [cycleTab, setCycleTab] = useState<"items" | "dependencies" | "dod">("items");
 
   const proposeCycle = async (e: FormEvent) => {
     e.preventDefault();
@@ -650,36 +651,69 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
               <div className="revision-chip">Plan revision <strong>{currentCycle.planRevision}</strong><small>{currentCycle.planDigest.slice(0, 8)}</small></div>
             </div>
             {proposed.length > 0 && <section className="proposed-cycles">{proposed.map((cycle) => <article className="card" key={cycle.id}><span className="section-kicker">PROPOSED CYCLE {cycle.number}</span><h3>{cycle.name}</h3><p>{cycle.goal}</p><StatePill state={cycle.state} /></article>)}</section>}
-            <section className="card graph-card">
-              <header>
-                <h3>Issue dependency graph</h3>
-                <span>{snapshot.issues.filter((i) => i.cycleId === currentCycle.id && i.displayState === "ready").length} ready to start</span>
-              </header>
-              <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-                <DependencyFlow issues={snapshot.issues.filter((i) => i.cycleId === currentCycle.id)} onIssue={onIssue} />
-              </div>
-            </section>
-            <section className="card"><header><h3>Definition of Done (DoD)</h3></header><ul className="check-list">{currentCycle.definitionOfDone.map((item) => <li key={item}><span>○</span>{item}</li>)}</ul></section>
             {(() => {
               const cycleIssues = snapshot.issues.filter((i) => i.cycleId === currentCycle.id);
               return (
-                <section className="card">
-                  <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <h3>Sprint Work Items ({cycleIssues.length})</h3>
-                    <span style={{ fontSize: "12px", color: "var(--muted)" }}>Max 360px scroll container</span>
-                  </header>
-                  <div className="work-table" style={{ maxHeight: "360px", overflowY: "auto" }}>
-                    {cycleIssues.map((issue) => (
-                      <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)}>
-                        <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
-                        <span>{titleCase(issue.type)}</span>
-                        <span><StatePill state={issue.displayState} /></span>
-                        <span>{issue.affectedModules.join(", ") || "—"}</span>
-                      </button>
-                    ))}
-                    {!cycleIssues.length && <div style={{ padding: "1.5rem", textAlign: "center", color: "var(--muted)" }}>No issues scheduled in this Cycle.</div>}
+                <>
+                  <div className="segmented" style={{ marginBottom: "1.25rem", width: "fit-content" }}>
+                    <button type="button" className={cycleTab === "items" ? "active" : ""} onClick={() => setCycleTab("items")}>
+                      📋 Sprint Work Items ({cycleIssues.length})
+                    </button>
+                    <button type="button" className={cycleTab === "dependencies" ? "active" : ""} onClick={() => setCycleTab("dependencies")}>
+                      🕸️ Dependency Network
+                    </button>
+                    <button type="button" className={cycleTab === "dod" ? "active" : ""} onClick={() => setCycleTab("dod")}>
+                      ✅ Definition of Done ({currentCycle.definitionOfDone.length})
+                    </button>
                   </div>
-                </section>
+
+                  {cycleTab === "items" && (
+                    <section className="card">
+                      <header>
+                        <h3>Sprint Work Items</h3>
+                        <span style={{ fontSize: "12px", color: "var(--muted)" }}>Click item for details & review</span>
+                      </header>
+                      <div className="work-table">
+                        {cycleIssues.map((issue) => (
+                          <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)}>
+                            <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
+                            <span>{titleCase(issue.type)}</span>
+                            <span><StatePill state={issue.displayState} /></span>
+                            <span>{issue.affectedModules.join(", ") || "—"}</span>
+                          </button>
+                        ))}
+                        {!cycleIssues.length && <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)" }}>No issues scheduled in this Cycle.</div>}
+                      </div>
+                    </section>
+                  )}
+
+                  {cycleTab === "dependencies" && (
+                    <section className="card graph-card">
+                      <header>
+                        <h3>Cycle Dependency Network</h3>
+                        <span>{cycleIssues.filter((i) => i.displayState === "ready").length} ready to start</span>
+                      </header>
+                      <div style={{ padding: "1rem" }}>
+                        <DependencyFlow issues={cycleIssues} onIssue={onIssue} />
+                      </div>
+                    </section>
+                  )}
+
+                  {cycleTab === "dod" && (
+                    <section className="card">
+                      <header>
+                        <h3>Definition of Done (DoD) & Iteration Criteria</h3>
+                      </header>
+                      <ul className="check-list" style={{ gridTemplateColumns: "1fr", padding: "1.25rem 1.5rem" }}>
+                        {currentCycle.definitionOfDone.map((item) => (
+                          <li key={item} style={{ fontSize: "15px", padding: "8px 0", borderBottom: "1px solid #f0f3f0" }}>
+                            <span style={{ fontWeight: "bold", marginRight: "10px" }}>✓</span>{item}
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+                </>
               );
             })()}
           </>
