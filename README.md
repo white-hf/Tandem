@@ -1,37 +1,71 @@
 # Tandem
 
 > **Agent-First Software Delivery Memory and Coordination Layer**
-> An Agent-first software delivery memory and coordination layer designed for 3–5 person Human + Agent engineering teams.
+> An Agent-first software delivery memory and coordination layer built for the AI Agent coding era, designed for 3–5 person Human + Agent engineering teams and solo builders.
 
-Tandem is an Agent-first delivery coordination and memory layer. Coding Agents (such as Claude Code, Antigravity, Cursor, etc.) interact with it primarily through the **Model Context Protocol (MCP)** interface; Humans use the **Web oversight interface** for baseline reviews, cycle planning, attention inbox, evidence inspection, and authoritative decisions.
+---
+
+## 💡 Why Tandem? Software Engineering in the AI Agent Era
+
+In the era of LLMs and autonomous Coding Agents (Claude Code, Cursor, Antigravity, Windsurf, etc.), **the central bottleneck of software engineering has shifted from *writing code* to *governing and coordinating Agent delivery***.
+
+Without a dedicated coordination layer, AI-native software engineering suffers from 4 fundamental failure modes:
+
+| AI Era Engineering Challenge | Industry Root Cause | How Tandem Solves It (Core Value) |
+| :--- | :--- | :--- |
+| **1. Context Drift & Alignment Loss** | Long conversations lead to memory decay, spec erosion, and architectural entropy. | **Immutable Baseline Memory**: Tandem anchors PRDs, System Designs, and DoD as SHA-256 hashed baselines. Agents must verify baseline hashes via MCP before coding. |
+| **2. Multi-Agent Swarm Chaos** | Multiple Agents operating concurrently collide, overwrite code, or duplicate work. | **Agent-First Coordination Layer**: Exclusive claim locks (`claim_issue`) prevent multi-agent collisions. Agents autonomously discover, claim, and unblock issues via MCP. |
+| **3. Review Exhaustion & Trust Crisis** | Humans cannot manually review thousands of lines of generated code. | **Evidence-Based Governance**: Replaces code-line nitpicking with *Executable Evidence* (test & build outputs). Humans inspect high-level evidence in the **Attention Inbox**. |
+| **4. Auditability & Memory Deficit** | Agent chat sessions leave no structured engineering history or decision trail. | **Append-Only Delivery Audit**: All human decisions, agent sessions, test evidence, and commits form an immutable, auditable delivery history in PostgreSQL. |
+
+---
+
+## 🎯 Target Audience & Team Configurations
+
+- **Solo Founders & Builders with Agents**: Solopreneurs steering 1–3 autonomous Coding Agents, acting as Product Owner while Agents execute tasks.
+- **3–5 Person Hybrid Human + Agent Engineering Teams**: Human engineers focus on architecture baselines, high-risk reviews, and strategic decisions; Coding Agents execute routine tasks and feature slices.
+- **Agent-Native Enterprise R&D**: Teams adopting Model Context Protocol (MCP) to standardize AI agent delivery workflows across GitHub repositories.
+
+---
+
+## 🌟 Latest Product Features & Architecture
+
+Tandem provides an **Agent-First MCP Protocol Interface** for Coding Agents and an **Ergonomic Web Interface** for Human Oversight.
 
 ```text
 Human + Agent Conversation
   ➔ Versioned Baseline Artifacts (PRD & System Design)
+  ➔ Project Switcher Dropdown & On-Demand + Create Project Modal
   ➔ 5-Hub Primary Navigation & 5-Column GitHub Projects Board
+  ➔ Scalable Cycle Selector Dropdown & Dependency-Aware List View
   ➔ Autonomous Agent Onboarding, Context Hash Digest & Claim Locks
   ➔ Executable Evidence (Tests & Builds) & Human Verification Gate
-  ➔ Append-Only Audit Trail & PostgreSQL State Persistence
+  ➔ Session Sign-Out & Append-Only PostgreSQL Audit Trail
 ```
 
+### 1. 5-Hub Ergonomic Oversight Navigation (Web Interface)
+- **`Attention`**: Human decision inbox and review gates. Filters out non-critical noise and highlights items requiring human approval.
+- **`Board & Work`**: 
+  - **5-Column GitHub Projects Board**: `Backlog` ➔ `Ready` ➔ `In Progress` [Claim Lock] ➔ `In Review` [Human Gate] ➔ `Done`.
+  - **Dependency-Aware List View**: Scalable structured table displaying *Blocked By (Upstream)* and *Blocks (Downstream)* relations, gracefully supporting 100+ issues without canvas visual clutter.
+  - **Scalable Cycle Selector**: Dropdown selector supporting hundreds of Scrum Sprints & Cycles.
+  - **Roadmap & Milestones**: High-level timeline for release milestones.
+- **`Baselines & Artifacts`**: Hashed baseline documents (PRD, System Design) with immutable revision histories.
+- **`Activity & Sessions`**: Complete agent session execution history and PostgreSQL append-only audit log.
+- **`People & Security`**: Team credentials, Human password authentication, Agent tokens, and session **Sign Out** security.
+
+### 2. Multi-Project & Workspace Flexibility
+- **Project Switcher & Creator**: Seamlessly switch between multiple projects in the sidebar or trigger the `Project Setup` modal to bootstrap a new project with GitHub repository bindings.
+
+### 3. Agent-First MCP Delivery Protocol
+- **Zero-Prompt Agent Onboarding**: Agents connect to `http://127.0.0.1:4310/mcp` via standard MCP config (`.mcp.json`) and call `get_project_context`, `confirm_understanding`, and `claim_issue` autonomously.
+- **Autonomous Continuous Mode**: Agents authorized with an overarching goal can plan cycles, create issues, attach evidence, and auto-verify non-material tasks within policy.
+
 ---
 
-## 🌟 Key Features & Highlights
+## 🚀 Quick Start
 
-- **5-Hub Ergonomic Oversight Navigation**:
-  1. `Attention`: Human decision inbox and review gates.
-  2. `Board & Work`: 5-Column GitHub Projects style board (`Backlog` ➔ `Ready` ➔ `In Progress` [Claim Lock] ➔ `In Review` [Human Gate] ➔ `Done`), integrating List View, Scrum Cycles & Sprints, and Roadmap Milestones.
-  3. `Baselines & Artifacts`: Immutable SHA-256 hashed baseline documents (PRD, System Design).
-  4. `Activity & Sessions`: Complete agent session execution history and PostgreSQL append-only audit trail.
-  5. `People & Security`: Team credentials, Human password authentication, and Agent Tokens.
-
-- **Exclusive Agent Claim Locking**: Prevents multi-agent code collisions by allowing at most one active claim per issue.
-- **Executable Evidence**: Requires Agents to attach reproducible test suites and build outputs before handoff.
-- **Autonomous Continuous Mode**: Agents authorized by an overarching goal can autonomously plan cycles, create issues, execute, and auto-verify low-risk tasks inside policy.
-
----
-
-## 🚀 Local Quick Start
+### 1. Local Development Mode
 
 Requires Node.js 22+, Corepack, and pnpm.
 
@@ -40,21 +74,42 @@ Requires Node.js 22+, Corepack, and pnpm.
 corepack enable
 pnpm install
 
-# Start local development server
+# Start local development server (API on 4310, Web on 4311)
 pnpm dev
 ```
 
-### Local Access Endpoints
-
-- **Human Web Oversight App**: [http://127.0.0.1:4311](http://127.0.0.1:4311)
+#### Access Endpoints
+- **Human Web Interface**: [http://127.0.0.1:4311](http://127.0.0.1:4311)
 - **Agent MCP Endpoint**: `http://127.0.0.1:4310/mcp`
 - **REST API Health**: [http://127.0.0.1:4310/health](http://127.0.0.1:4310/health)
 
+### 2. Connecting Coding Agents via MCP
+
+Add Tandem to your agent's MCP configuration (e.g. `.mcp.json` or Claude Code CLI):
+
+```json
+{
+  "mcpServers": {
+    "tandem": {
+      "url": "http://127.0.0.1:4310/mcp",
+      "headers": {
+        "Authorization": "Bearer tan_agent_00000000000000000000000000000000"
+      }
+    }
+  }
+}
+```
+
+Or via Claude Code CLI:
+```bash
+claude mcp add tandem http://127.0.0.1:4310/mcp --header "Authorization: Bearer tan_agent_00000000000000000000000000000000"
+```
+
 ---
 
-## 🐳 Docker Compose Deployment (Formal Local Pilot)
+## 🐳 Docker Compose Deployment (Production Pilot)
 
-To deploy the production-like Docker Compose Pilot:
+To launch the formal Docker Compose Pilot stack with PostgreSQL persistence:
 
 ```bash
 POSTGRES_PASSWORD=tandem_pilot_password \
@@ -65,7 +120,7 @@ docker compose -f compose.pilot.yaml up -d --build
 
 ---
 
-## 🧪 Verification & Build Checks
+## 🧪 Verification & Workspace Checks
 
 ```bash
 # Run workspace test suites (API, Domain, Identity, Web)
