@@ -631,9 +631,12 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
         }
         return (
           <>
-            <div className="page-intro split">
-              <div><span className="section-kicker">CYCLE {currentCycle.number} · {currentCycle.state.toUpperCase()}</span><h2>{currentCycle.name}</h2><p>{currentCycle.goal}</p></div>
-              <div className="revision-chip">Plan revision <strong>{currentCycle.planRevision}</strong><small>{currentCycle.planDigest.slice(0, 8)}</small></div>
+            <div className="page-intro split" style={{ alignItems: "center", marginBottom: "0.75rem" }}>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <StatePill state={currentCycle.state} />
+                <h3 style={{ margin: 0 }}>Cycle {currentCycle.number}: {currentCycle.name}</h3>
+              </div>
+              <div className="revision-chip" style={{ padding: "4px 8px", fontSize: "12px" }}>Plan r<strong>{currentCycle.planRevision}</strong> <small>{currentCycle.planDigest.slice(0, 8)}</small></div>
             </div>
             {proposed.length > 0 && <section className="proposed-cycles">{proposed.map((cycle) => <article className="card" key={cycle.id}><span className="section-kicker">PROPOSED CYCLE {cycle.number}</span><h3>{cycle.name}</h3><p>{cycle.goal}</p><StatePill state={cycle.state} /></article>)}</section>}
             {(() => {
