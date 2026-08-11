@@ -22,6 +22,7 @@ import {
   loginPasswordInput,
   loginTokenInput,
   setPasswordInput,
+  updateIssueInput,
   updatePrincipalInput,
 } from "@tandem/contracts";
 import { IdempotencyConflictError, MemoryEventStore, StateRevisionConflictError, TandemRuntime, type EventStore } from "@tandem/db";
@@ -193,6 +194,13 @@ export async function buildApp(
     return reply.status(201).send(result);
   });
 
+  app.post<{ Params: { id: string } }>("/v1/human/principals/:id/tokens", async (request, reply) => {
+    const actor = requireActor(request, "human", "identity:admin");
+    const input = issueTokenInput.parse(request.body ?? { label: "Regenerated Agent Token" });
+    const result = await mutateWithIdempotency(runtime, restIdempotency(request, actor, 201), (service) => service.issueToken(request.params.id, input, actor.id));
+    return reply.status(201).send(result);
+  });
+
   app.get<{ Params: { id: string } }>("/v1/human/principals/:id/credentials", async (request) => {
     requireActor(request, "human", "identity:admin");
     return { data: runtime.read((service) => service.listCredentials(request.params.id)) };
@@ -208,15 +216,6 @@ export async function buildApp(
     return { status: "ok" };
   });
 
-  app.post<{ Params: { id: string } }>("/v1/human/principals/:id/tokens", async (request, reply) => {
-    const actor = requireActor(request, "human");
-    if (actor.id !== request.params.id && !actor.capabilities.includes("identity:admin")) {
-      throw new AuthenticationError(403, "AUTHORIZATION_DENIED", "Missing capability: identity:admin");
-    }
-    const input = issueTokenInput.parse(request.body);
-    const result = await mutateWithIdempotency(runtime, restIdempotency(request, actor, 201), (service) => service.issueToken(request.params.id, input, actor.id));
-    return reply.status(201).send(result);
-  });
 
   app.delete<{ Params: { credentialId: string } }>("/v1/human/credentials/:credentialId", async (request, reply) => {
     const actor = requireActor(request, "human", "identity:admin");

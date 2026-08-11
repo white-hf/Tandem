@@ -1100,6 +1100,26 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
     }
   };
 
+  const regenerateAgentToken = async (agentId: string, agentName: string) => {
+    setError(undefined);
+    try {
+      const res = await fetch(`/api/v1/human/principals/${agentId}/tokens`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({ label: `Regenerated Token for ${agentName}` }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error?.message ?? "Could not regenerate token");
+        return;
+      }
+      setOneTimeSecret({ secret: body.secret, warning: body.warning, type: "agent", displayName: agentName });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error regenerating token");
+    }
+  };
+
   const copyAgentMcpConfig = (agentName: string, token: string = "<YOUR_AGENT_BEARER_TOKEN>") => {
     const config = JSON.stringify({
       mcpServers: {
@@ -1112,7 +1132,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
       }
     }, null, 2);
     void navigator.clipboard.writeText(config);
-    alert(`Copied MCP JSON Configuration for Agent "${agentName}"!\n\nNote: If using this snippet, replace <YOUR_AGENT_BEARER_TOKEN> with the token generated during creation if needed.`);
+    alert(`Copied MCP JSON Configuration for Agent "${agentName}"!`);
   };
 
   return (
@@ -1307,15 +1327,26 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
               <span>{p.roles.join(", ")}</span>
               <span style={{ display: "flex", gap: "6px" }}>
                 {p.type === "agent" && (
-                  <button
-                    type="button"
-                    className="refresh"
-                    style={{ padding: "2px 8px", fontSize: "0.8rem", color: "var(--green)" }}
-                    onClick={() => copyAgentMcpConfig(p.displayName)}
-                    title="Copy MCP JSON Configuration for this Agent"
-                  >
-                    📋 Copy MCP Config
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="refresh"
+                      style={{ padding: "2px 8px", fontSize: "0.8rem", color: "#10b981", borderColor: "#10b981" }}
+                      onClick={() => void regenerateAgentToken(p.id, p.displayName)}
+                      title="Issue a fresh Token & Copy Config Panel for this Agent"
+                    >
+                      🔑 Regenerate Token & Config
+                    </button>
+                    <button
+                      type="button"
+                      className="refresh"
+                      style={{ padding: "2px 8px", fontSize: "0.8rem" }}
+                      onClick={() => copyAgentMcpConfig(p.displayName)}
+                      title="Copy Endpoint URL and JSON Template"
+                    >
+                      📋 Copy MCP Template
+                    </button>
+                  </>
                 )}
                 {editingId !== p.id && (
                   <button
