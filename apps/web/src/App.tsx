@@ -670,9 +670,11 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
                           <span>Modules</span>
                         </div>
                         {cycleIssues.map((issue) => {
-                          const creator = issue.intake?.capturedBy?.actorId ?? "human";
+                          const creatorId = issue.intake?.capturedBy?.actorId ?? "human";
+                          const creator = creatorId === "pilot-agent" ? "Gemini Agent" : creatorId;
                           const createdDate = issue.intake?.capturedAt ? new Date(issue.intake.capturedAt).toLocaleDateString(undefined, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
-                          const assignee = issue.activeClaim?.agentId ?? "— Unclaimed";
+                          const assigneeId = issue.activeClaim?.agentId;
+                          const assignee = assigneeId ? (assigneeId === "pilot-agent" ? "Gemini Agent" : assigneeId) : "— Unclaimed";
                           return (
                             <button type="button" className="table-row" key={issue.id} onClick={() => onIssue(issue)} style={{ gridTemplateColumns: "1.4fr 0.8fr 0.8fr 1fr 1fr 0.8fr" }}>
                               <span><b>{issue.key}</b><strong>{issue.title}</strong></span>
@@ -843,9 +845,11 @@ function Work({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: (issu
               <span>Modules</span>
             </div>
             {snapshot.issues.map((issue) => {
-              const creator = issue.intake?.capturedBy?.actorId ?? "human";
+              const creatorId = issue.intake?.capturedBy?.actorId ?? "human";
+              const creator = creatorId === "pilot-agent" ? "Gemini Agent" : creatorId;
               const createdDate = issue.intake?.capturedAt ? new Date(issue.intake.capturedAt).toLocaleDateString(undefined, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
-              const assignee = issue.activeClaim?.agentId ?? "— Unclaimed";
+              const assigneeId = issue.activeClaim?.agentId;
+              const assignee = assigneeId ? (assigneeId === "pilot-agent" ? "Gemini Agent" : assigneeId) : "— Unclaimed";
               const handoff = snapshot.handoffs.find((h) => h.issueId === issue.id);
               return (
                 <button
@@ -929,6 +933,11 @@ function IssueDetailContent({ issue, snapshot }: { issue: Issue; snapshot: Proje
   const handoff = snapshot.handoffs.find((item) => item.issueId === issue.id);
   const gitArtifacts = snapshot.gitArtifacts?.filter((artifact) => artifact.issueKey === issue.key) ?? [];
   const detailEntries = Object.entries(issue.intake.details).filter((entry): entry is [string, string] => Boolean(entry[1]));
+  const creatorId = issue.intake?.capturedBy?.actorId ?? "human";
+  const creatorName = creatorId === "pilot-agent" ? "Gemini Agent" : creatorId;
+  const assigneeId = issue.activeClaim?.agentId;
+  const assigneeName = assigneeId ? (assigneeId === "pilot-agent" ? "Gemini Agent" : assigneeId) : undefined;
+
   return <div className="panel-content">
     <span className="section-kicker">{titleCase(issue.type)} · {issue.key}</span>
     <h2>{issue.title}</h2>
@@ -937,14 +946,14 @@ function IssueDetailContent({ issue, snapshot }: { issue: Issue; snapshot: Proje
     <PanelSection title="Life-cycle Ownership & Audit">
       <div className="key-values">
         <span>Created by</span>
-        <strong>👤 {issue.intake?.capturedBy?.actorId ?? "human"} <small style={{ fontWeight: 400, color: "var(--muted)" }}>({issue.intake?.capturedAt ? new Date(issue.intake.capturedAt).toLocaleString() : "—"})</small></strong>
+        <strong>👤 {creatorName} <small style={{ fontWeight: 400, color: "var(--muted)" }}>({issue.intake?.capturedAt ? new Date(issue.intake.capturedAt).toLocaleString() : "—"})</small></strong>
         <span>Current Assignee</span>
-        <strong>{issue.activeClaim ? `🔒 ${issue.activeClaim.agentId} (${new Date(issue.activeClaim.claimedAt).toLocaleString()})` : "— Unclaimed"}</strong>
+        <strong>{assigneeName ? `🔒 ${assigneeName} (${new Date(issue.activeClaim!.claimedAt).toLocaleString()})` : "— Unclaimed"}</strong>
         <span>State / Approver</span>
         <strong>{issue.displayState === "done" ? "✓ Approved by pilot-owner" : issue.displayState}</strong>
       </div>
     </PanelSection>
-    <PanelSection title="Original intake"><blockquote>{issue.intake.originalStatement}</blockquote><small>{titleCase(issue.intake.source)} · {issue.intake.capturedBy.actorType} {issue.intake.capturedBy.actorId}</small>{detailEntries.map(([key, value]) => <div className="intake-detail" key={key}><span>{titleCase(key)}</span><p>{value}</p></div>)}</PanelSection>
+    <PanelSection title="Original intake"><blockquote>{issue.intake.originalStatement}</blockquote><small>{titleCase(issue.intake.source)} · {issue.intake.capturedBy.actorType} {creatorName}</small>{detailEntries.map(([key, value]) => <div className="intake-detail" key={key}><span>{titleCase(key)}</span><p>{value}</p></div>)}</PanelSection>
     {issue.promotion && <PanelSection title="Promotion"><div className="warning-line">! Promoted to planned delivery</div><p>{issue.promotion.reasons.join(" · ")}</p><small>{new Date(issue.promotion.promotedAt).toLocaleString()} · {issue.promotion.promotedBy.actorId}</small></PanelSection>}
     <PanelSection title="Acceptance">{issue.acceptanceCriteria.map((criterion) => <div className="criterion" key={criterion}>○ {criterion}</div>)}{!issue.acceptanceCriteria.length && <small>Acceptance criteria still need enrichment.</small>}</PanelSection>
     <PanelSection title="Readiness">{blockers.length ? blockers.map((blocker) => <div className="dependency" key={blocker.id}><StatePill state={blocker.displayState} /> {blocker.key} · {blocker.title}</div>) : <div className="success-line">✓ No incomplete dependencies</div>}{issue.readinessReasons.map((reason) => <div className="warning-line" key={reason}>! {reason}</div>)}</PanelSection>
