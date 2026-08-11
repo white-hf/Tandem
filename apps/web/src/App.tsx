@@ -1033,7 +1033,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
     e.preventDefault();
     setError(undefined);
     try {
-      const res = await fetch("/v1/human/principals/agents", {
+      const res = await fetch("/api/v1/human/principals/agents", {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
@@ -1082,7 +1082,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
     if (!editName.trim()) return;
     setError(undefined);
     try {
-      const res = await fetch(`/v1/human/principals/${id}`, {
+      const res = await fetch(`/api/v1/human/principals/${id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
@@ -1092,12 +1092,11 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
         const body = await res.json();
         setError(body.error?.message ?? "Could not update Display Name");
       } else {
-        setPrincipals(prev => prev.map(p => p.id === id ? { ...p, displayName: editName.trim() } : p));
         setEditingId(undefined);
+        await loadPrincipals();
       }
-    } catch {
-      setPrincipals(prev => prev.map(p => p.id === id ? { ...p, displayName: editName.trim() } : p));
-      setEditingId(undefined);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error updating Display Name");
     }
   };
 
