@@ -518,11 +518,11 @@ function DependencyFlow({ issues, onIssue }: { issues: Issue[]; onIssue: (issue:
 }
 
 function Attention({ snapshot, onReviewIssue, onArtifact, onOpenCycles, onDecision }: { snapshot: ProjectSnapshot; onReviewIssue: (issue: Issue) => void; onArtifact: (artifact: SnapshotArtifact) => void; onOpenCycles: () => void; onDecision: (requestId: string, outcome: "approved" | "changes_requested") => Promise<void> }) {
-  return <section className="page-stack"><div className="page-intro"><span className="section-kicker">HUMAN OVERSIGHT</span><h2>Decisions and exceptions</h2><p>Agent activity stays quiet until it needs judgment, context, or risk acceptance.</p></div>{snapshot.attention.length === 0 ? <Empty>Nothing needs Human attention.</Empty> : snapshot.attention.map((item) => { const issue = snapshot.issues.find((candidate) => candidate.id === item.subjectId); const decision = snapshot.decisionRequests.find((candidate) => candidate.id === item.subjectId); const decisionArtifact = decision?.subjectType === "artifact_revision" ? snapshot.artifacts.find((artifact) => artifact.proposedRevision?.id === decision.subjectId) : undefined; return <article className="attention-card" key={item.id}><span className={`severity ${item.severity}`}>!</span><div><div className="attention-meta">{decision ? `${titleCase(decision.kind)} · ${titleCase(decision.risk)} risk` : `${titleCase(item.kind)} · ${snapshot.project.key}`}</div><h3>{item.title}</h3><p>{item.summary}</p></div>{issue && <button onClick={() => onReviewIssue(issue)}>Review issue →</button>}{decision && <div className="decision-actions">{decisionArtifact && <button className="secondary" onClick={() => onArtifact(decisionArtifact)}>Review proposal</button>}{decision.subjectType === "cycle" && <button className="secondary" onClick={onOpenCycles}>Review Cycle</button>}<button className="secondary" onClick={() => void onDecision(decision.id, "changes_requested")}>Request changes</button><button onClick={() => void onDecision(decision.id, "approved")}>Approve</button></div>}</article>; })}</section>;
+  return <section className="page-stack">{snapshot.attention.length === 0 ? <Empty>Nothing needs Human attention.</Empty> : snapshot.attention.map((item) => { const issue = snapshot.issues.find((candidate) => candidate.id === item.subjectId); const decision = snapshot.decisionRequests.find((candidate) => candidate.id === item.subjectId); const decisionArtifact = decision?.subjectType === "artifact_revision" ? snapshot.artifacts.find((artifact) => artifact.proposedRevision?.id === decision.subjectId) : undefined; return <article className="attention-card" key={item.id}><span className={`severity ${item.severity}`}>!</span><div><div className="attention-meta">{decision ? `${titleCase(decision.kind)} · ${titleCase(decision.risk)} risk` : `${titleCase(item.kind)} · ${snapshot.project.key}`}</div><h3>{item.title}</h3><p>{item.summary}</p></div>{issue && <button onClick={() => onReviewIssue(issue)}>Review issue →</button>}{decision && <div className="decision-actions">{decisionArtifact && <button className="secondary" onClick={() => onArtifact(decisionArtifact)}>Review proposal</button>}{decision.subjectType === "cycle" && <button className="secondary" onClick={onOpenCycles}>Review Cycle</button>}<button className="secondary" onClick={() => void onDecision(decision.id, "changes_requested")}>Request changes</button><button onClick={() => void onDecision(decision.id, "approved")}>Approve</button></div>}</article>; })}</section>;
 }
 
 function Roadmap({ snapshot }: { snapshot: ProjectSnapshot }) {
-  return <section className="page-stack"><div className="page-intro"><span className="section-kicker">OUTCOME VIEW</span><h2>Roadmap</h2><p>Initiatives, Projects, and Milestones—without inventing another work hierarchy.</p></div><article className="roadmap-track card"><div className="roadmap-project"><span className="project-key">{snapshot.project.key}</span><div><strong>{snapshot.project.name}</strong><small>{snapshot.project.goal}</small></div><StatePill state={snapshot.project.health} /></div><div className="roadmap-line"><i /><span className="milestone-dot active" /><div className="milestone-card"><small>{snapshot.milestone ? "CURRENT MILESTONE" : "PROJECT TARGET"}</small><strong>{snapshot.milestone?.name ?? "First usable delivery"}</strong><span>{snapshot.milestone?.targetDate ?? snapshot.project.targetDate}</span></div><span className="milestone-dot future" /><div className="milestone-card muted"><small>NEXT</small><strong>Pilot learning</strong><span>After release gate</span></div></div></article></section>;
+  return <section className="page-stack"><article className="roadmap-track card"><div className="roadmap-project"><span className="project-key">{snapshot.project.key}</span><div><strong>{snapshot.project.name}</strong><small>{snapshot.project.goal}</small></div><StatePill state={snapshot.project.health} /></div><div className="roadmap-line"><i /><span className="milestone-dot active" /><div className="milestone-card"><small>{snapshot.milestone ? "CURRENT MILESTONE" : "PROJECT TARGET"}</small><strong>{snapshot.milestone?.name ?? "First usable delivery"}</strong><span>{snapshot.milestone?.targetDate ?? snapshot.project.targetDate}</span></div><span className="milestone-dot future" /><div className="milestone-card muted"><small>NEXT</small><strong>Pilot learning</strong><span>After release gate</span></div></div></article></section>;
 }
 
 function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: (issue: Issue) => void }) {
@@ -568,11 +568,9 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
   const proposed = snapshot.cycles.filter((cycle) => cycle.state === "draft" || cycle.state === "proposed");
   return (
     <section className="page-stack">
-      <div className="page-intro split">
+      <div className="page-intro split" style={{ marginBottom: "0.5rem" }}>
         <div>
-          <span className="section-kicker">SCRUM ITERATIONS</span>
-          <h2>Cycles & Sprints</h2>
-          <p>Define Sprint timeboxes, goals, and explicit Definition of Done (DoD) checklists.</p>
+          <h2 style={{ margin: 0 }}>Cycles & Sprints</h2>
         </div>
         <div>
           <button className="quick-add-button" onClick={() => setShowPropose(!showPropose)}>
@@ -748,12 +746,7 @@ function Work({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: (issu
 
   return (
     <section className="page-stack">
-      <div className="page-intro split">
-        <div>
-          <span className="section-kicker">AGILE WORKFLOW</span>
-          <h2>Board & Work</h2>
-          <p>GitHub Projects-style delivery board, Scrum Sprints, and Roadmap milestones.</p>
-        </div>
+      <div className="page-intro split" style={{ marginBottom: "0.5rem", alignItems: "center" }}>
         <div className="segmented">
           <button type="button" className={mode === "kanban" ? "active" : ""} onClick={() => setMode("kanban")}>Kanban Board</button>
           <button type="button" className={mode === "list" ? "active" : ""} onClick={() => setMode("list")}>List View</button>
@@ -884,15 +877,15 @@ function Work({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: (issu
 }
 
 function Artifacts({ snapshot, onArtifact }: { snapshot: ProjectSnapshot; onArtifact: (artifact: SnapshotArtifact) => void }) {
-  return <section className="page-stack"><div className="page-intro"><span className="section-kicker">DELIVERY KNOWLEDGE</span><h2>Artifacts</h2><p>The effective baseline is primary. Proposals and history remain explicit.</p></div><div className="artifact-grid">{snapshot.artifacts.map((artifact) => <button className="artifact-card card" key={artifact.id} onClick={() => onArtifact(artifact)}><div className="artifact-top"><span className="large-doc">≡</span><StatePill state={artifact.effectiveRevision?.state ?? "missing"} /></div><h3>{artifact.title}</h3><p>{titleCase(artifact.type)}</p><div className="artifact-meta"><span>{artifact.effectiveRevision ? `Effective r${artifact.effectiveRevision.revision}` : "No effective baseline"}</span><span>{artifact.effectiveRevision?.storageMode === "git_backed" ? "Git-backed" : "Tandem draft"}</span></div>{artifact.proposedRevision && <div className="proposal-banner">● Proposed revision {artifact.proposedRevision.revision}</div>}</button>)}</div></section>;
+  return <section className="page-stack"><div className="artifact-grid">{snapshot.artifacts.map((artifact) => <button className="artifact-card card" key={artifact.id} onClick={() => onArtifact(artifact)}><div className="artifact-top"><span className="large-doc">≡</span><StatePill state={artifact.effectiveRevision?.state ?? "missing"} /></div><h3>{artifact.title}</h3><p>{titleCase(artifact.type)}</p><div className="artifact-meta"><span>{artifact.effectiveRevision ? `Effective r${artifact.effectiveRevision.revision}` : "No effective baseline"}</span><span>{artifact.effectiveRevision?.storageMode === "git_backed" ? "Git-backed" : "Tandem draft"}</span></div>{artifact.proposedRevision && <div className="proposal-banner">● Proposed revision {artifact.proposedRevision.revision}</div>}</button>)}</div></section>;
 }
 
 function Sessions({ snapshot }: { snapshot: ProjectSnapshot }) {
-  return <section className="page-stack"><div className="page-intro"><span className="section-kicker">AGENT CONTINUITY</span><h2>Agent Sessions</h2><p>Every implementation session reads current baselines and code before claiming work.</p></div>{snapshot.sessions.length === 0 ? <Empty><strong>No active Agent Sessions</strong><span>Run <code>pnpm demo:agent</code> while the API is running, then refresh.</span></Empty> : <div className="session-list">{snapshot.sessions.map((session) => <article className="session-card card" key={session.id}><span className="agent-avatar">AI</span><div><div className="session-meta">{session.agentId} · {session.id.slice(0, 8)}</div><h3>{snapshot.issues.find((issue) => issue.id === session.issueId)?.key ?? snapshot.project.key}</h3><p>{session.understanding ?? "Reading required project context"}</p><div className="context-progress"><i style={{ width: session.confirmedAt ? "100%" : "35%" }} /></div><small>{session.contextItems.length} context items · digest {session.contextDigest.slice(0, 8)}</small></div><StatePill state={session.stale ? "stale" : session.state} /></article>)}</div>}</section>;
+  return <section className="page-stack">{snapshot.sessions.length === 0 ? <Empty><strong>No active Agent Sessions</strong><span>Run <code>pnpm demo:agent</code> while the API is running, then refresh.</span></Empty> : <div className="session-list">{snapshot.sessions.map((session) => <article className="session-card card" key={session.id}><span className="agent-avatar">AI</span><div><div className="session-meta">{session.agentId} · {session.id.slice(0, 8)}</div><h3>{snapshot.issues.find((issue) => issue.id === session.issueId)?.key ?? snapshot.project.key}</h3><p>{session.understanding ?? "Reading required project context"}</p><div className="context-progress"><i style={{ width: session.confirmedAt ? "100%" : "35%" }} /></div><small>{session.contextItems.length} context items · digest {session.contextDigest.slice(0, 8)}</small></div><StatePill state={session.stale ? "stale" : session.state} /></article>)}</div>}</section>;
 }
 
 function ActivityView({ snapshot }: { snapshot: ProjectSnapshot }) {
-  return <section className="page-stack"><div className="page-intro"><span className="section-kicker">AUDIT TRAIL</span><h2>Activity</h2><p>Semantic delivery events, with raw Agent noise left outside the system.</p></div><div className="timeline">{snapshot.activities.map((activity) => <article key={activity.id}><span className={`actor-dot ${activity.actorType}`} /> <div><div><strong>{activity.action}</strong><span>{new Date(activity.occurredAt).toLocaleString()}</span></div><p>{activity.summary}</p><small>{activity.actorType} · {activity.actorId}</small></div></article>)}</div></section>;
+  return <section className="page-stack"><div className="timeline">{snapshot.activities.map((activity) => <article key={activity.id}><span className={`actor-dot ${activity.actorType}`} /> <div><div><strong>{activity.action}</strong><span>{new Date(activity.occurredAt).toLocaleString()}</span></div><p>{activity.summary}</p><small>{activity.actorType} · {activity.actorId}</small></div></article>)}</div></section>;
 }
 
 function IssueDetail({ issue, snapshot, verificationMode, onReview }: { issue: Issue; snapshot: ProjectSnapshot; verificationMode: boolean; onReview: (issue: Issue, outcome: "approved" | "changes_requested", rationale: string) => Promise<void> }) {
@@ -1146,12 +1139,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
 
   return (
     <section className="page-stack">
-      <div className="page-intro split">
-        <div>
-          <span className="section-kicker">IDENTITY ADMINISTRATION</span>
-          <h2>People & Agents</h2>
-          <p>Manage Human users and Coding Agent credentials for Project {snapshot.project.key}.</p>
-        </div>
+      <div className="page-intro split" style={{ marginBottom: "0.5rem", alignItems: "center" }}>
         <div className="top-actions">
           <button className="secondary" onClick={() => { setShowAddAgent(true); setShowAddHuman(false); setOneTimeSecret(undefined); }}>＋ Add Agent</button>
           <button className="quick-add-button" onClick={() => { setShowAddHuman(true); setShowAddAgent(false); setOneTimeSecret(undefined); }}>＋ Add Human</button>
