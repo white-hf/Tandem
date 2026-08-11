@@ -1229,7 +1229,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
       {showAddAgent && (
         <form onSubmit={(e) => void createAgent(e)} className="card" style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           <h3>Add Coding Agent</h3>
-          <label>Agent Name<input value={agentForm.displayName} onChange={(e) => setAgentForm((f) => ({ ...f, displayName: e.target.value }))} placeholder="e.g. Claude Coding Agent" required /></label>
+          <label>Agent Name<input value={agentForm.displayName} onChange={(e) => setAgentForm((f) => ({ ...f, displayName: e.target.value }))} placeholder="e.g. Claude Coding Agent" required minLength={2} /></label>
           <label>Token Label<input value={agentForm.tokenLabel} onChange={(e) => setAgentForm((f) => ({ ...f, tokenLabel: e.target.value }))} required /></label>
           <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
             <button type="button" className="secondary" onClick={() => setShowAddAgent(false)}>Cancel</button>
