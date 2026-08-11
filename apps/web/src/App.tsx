@@ -1085,11 +1085,13 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
     await loadPrincipals();
   };
 
-  const saveDisplayName = async (id: string) => {
+  const saveDisplayName = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!editName.trim()) return;
     setError(undefined);
     try {
-      const res = await fetch(`/api/v1/human/principals/${id}`, {
+      const res = await fetch(`/v1/human/principals/${id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
@@ -1181,7 +1183,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
                       onChange={(e) => setEditName(e.target.value)}
                       style={{ padding: "2px 6px", fontSize: "13px", borderRadius: "4px", border: "1px solid var(--green)" }}
                     />
-                    <button type="button" className="refresh" onClick={() => void saveDisplayName(p.id)} style={{ fontSize: "11px", padding: "2px 6px" }}>Save</button>
+                    <button type="button" className="refresh" onClick={(e) => void saveDisplayName(e, p.id)} style={{ fontSize: "11px", padding: "2px 6px" }}>Save</button>
                     <button type="button" className="secondary" onClick={() => setEditingId(undefined)} style={{ fontSize: "11px", padding: "2px 6px" }}>✕</button>
                   </span>
                 ) : (
