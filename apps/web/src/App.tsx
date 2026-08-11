@@ -663,13 +663,15 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
 function Work({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: (issue: Issue) => void }) {
   const [mode, setMode] = useState<"kanban" | "list" | "cycles" | "roadmap">("kanban");
   const [compact, setCompact] = useState(false);
+  const [showAllDone, setShowAllDone] = useState(false);
+  const [kanbanCycleId, setKanbanCycleId] = useState<string>("ALL");
 
   const columns: Array<{ id: string; title: string; filter: (issue: Issue) => boolean }> = [
-    { id: "backlog", title: "Backlog", filter: (i) => i.baseState === "backlog" || i.displayState === "blocked" },
-    { id: "ready", title: "Ready", filter: (i) => i.displayState === "ready" },
-    { id: "in_progress", title: "In Progress", filter: (i) => i.displayState === "claimed" },
-    { id: "in_review", title: "In Review", filter: (i) => i.displayState === "review" },
-    { id: "done", title: "Done", filter: (i) => i.displayState === "done" },
+    { id: "backlog", title: "Backlog", filter: (i) => (kanbanCycleId === "ALL" || i.cycleId === kanbanCycleId) && (i.baseState === "backlog" || i.displayState === "blocked") },
+    { id: "ready", title: "Ready", filter: (i) => (kanbanCycleId === "ALL" || i.cycleId === kanbanCycleId) && i.displayState === "ready" },
+    { id: "in_progress", title: "In Progress", filter: (i) => (kanbanCycleId === "ALL" || i.cycleId === kanbanCycleId) && i.displayState === "claimed" },
+    { id: "in_review", title: "In Review", filter: (i) => (kanbanCycleId === "ALL" || i.cycleId === kanbanCycleId) && i.displayState === "review" },
+    { id: "done", title: "Done", filter: (i) => (kanbanCycleId === "ALL" || i.cycleId === kanbanCycleId) && i.displayState === "done" },
   ];
 
   return (
@@ -689,34 +691,63 @@ function Work({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: (issu
       </div>
 
       {mode === "kanban" && (
-        <div className="kanban-board">
-          {columns.map((col) => {
-            const items = snapshot.issues.filter(col.filter);
-            return (
-              <div className="kanban-column" key={col.id}>
-                <div className="kanban-header">
-                  <strong>{col.title}</strong>
-                  <span className="kanban-count">{items.length}</span>
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+            <label style={{ fontSize: "14px", color: "var(--muted)", display: "flex", alignItems: "center", gap: "8px" }}>
+              Filter by Cycle:
+              <select
+                value={kanbanCycleId}
+                onChange={(e) => setKanbanCycleId(e.target.value)}
+                style={{ padding: "4px 8px", borderRadius: "6px", border: "1px solid var(--line)", background: "#fff" }}
+              >
+                <option value="ALL">All Cycles & Backlog</option>
+                {snapshot.cycles.map((c) => (
+                  <option key={c.id} value={c.id}>Cycle {c.number}: {c.name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="kanban-board">
+            {columns.map((col) => {
+              const allItems = snapshot.issues.filter(col.filter);
+              const items = col.id === "done" && !showAllDone ? allItems.slice(0, 5) : allItems;
+              return (
+                <div className="kanban-column" key={col.id}>
+                  <div className="kanban-header">
+                    <strong>{col.title}</strong>
+                    <span className="kanban-count">{allItems.length}</span>
+                  </div>
+                  <div className="kanban-cards">
+                    {items.map((issue) => (
+                      <button type="button" className="kanban-card" key={issue.id} onClick={() => onIssue(issue)}>
+                        <div className="kanban-card-top">
+                          <span className="kanban-key">{issue.key}</span>
+                          <StatePill state={issue.displayState} />
+                        </div>
+                        <h4>{issue.title}</h4>
+                        <div className="kanban-card-meta">
+                          <span>{titleCase(issue.type)} {issue.cycleId ? `· C${snapshot.cycles.find(c => c.id === issue.cycleId)?.number ?? 1}` : ""}</span>
+                          {issue.activeClaim && <span className="claim-badge">🔒 {issue.activeClaim.agentId}</span>}
+                        </div>
+                      </button>
+                    ))}
+                    {col.id === "done" && allItems.length > 5 && (
+                      <button
+                        type="button"
+                        className="text-button"
+                        onClick={() => setShowAllDone(!showAllDone)}
+                        style={{ fontSize: "13px", padding: "8px 0", color: "var(--green)", fontWeight: 600, textAlign: "center", width: "100%" }}
+                      >
+                        {showAllDone ? "Show recent 5 only ⬆" : `+ Show ${allItems.length - 5} more completed ⬇`}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="kanban-cards">
-                  {items.map((issue) => (
-                    <button type="button" className="kanban-card" key={issue.id} onClick={() => onIssue(issue)}>
-                      <div className="kanban-card-top">
-                        <span className="kanban-key">{issue.key}</span>
-                        <StatePill state={issue.displayState} />
-                      </div>
-                      <h4>{issue.title}</h4>
-                      <div className="kanban-card-meta">
-                        <span>{titleCase(issue.type)} {issue.cycleId ? `· C${snapshot.cycles.find(c => c.id === issue.cycleId)?.number ?? 1}` : ""}</span>
-                        {issue.activeClaim && <span className="claim-badge">🔒 {issue.activeClaim.agentId}</span>}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {mode === "list" && (
