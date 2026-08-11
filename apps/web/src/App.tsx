@@ -299,19 +299,6 @@ export function App() {
             <h1>{view === "work" ? "Board & Work" : view === "artifacts" ? "Baselines & Artifacts" : view === "activity" ? "Activity & Sessions" : view === "settings" ? "People & Security" : titleCase(view)}</h1>
           </div>
           <div className="top-actions">
-            <button
-              type="button"
-              className="refresh"
-              onClick={() => {
-                const mcpSnippet = `http://127.0.0.1:4310/mcp`;
-                void navigator.clipboard.writeText(mcpSnippet);
-                alert("Copied MCP Endpoint: http://127.0.0.1:4310/mcp");
-              }}
-              title="Copy MCP Endpoint for Agent Onboarding"
-              style={{ color: "var(--green)", fontWeight: 600 }}
-            >
-              📋 MCP Endpoint
-            </button>
             <button className="quick-add-button" onClick={() => setQuickAddOpen(true)}>＋ Quick Add</button>
             <button className="refresh" onClick={() => void load(selectedProjectKey)}>↻ <span>Refresh</span></button>
             <button
@@ -1045,25 +1032,29 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
   const createAgent = async (e: FormEvent) => {
     e.preventDefault();
     setError(undefined);
-    const res = await fetch("/api/v1/human/principals/agents", {
-      method: "POST",
-      credentials: "include",
-      headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
-      body: JSON.stringify({
-        displayName: agentForm.displayName,
-        tokenLabel: agentForm.tokenLabel,
-        projectKeys: [snapshot.project.key],
-      }),
-    });
-    const body = await res.json();
-    if (!res.ok) {
-      setError(body.error?.message ?? "Could not create Agent");
-      return;
+    try {
+      const res = await fetch("/v1/human/principals/agents", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({
+          displayName: agentForm.displayName,
+          tokenLabel: agentForm.tokenLabel,
+          projectKeys: [snapshot.project.key],
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error?.message ?? "Could not create Agent");
+        return;
+      }
+      setOneTimeSecret({ secret: body.secret, warning: body.warning });
+      setShowAddAgent(false);
+      setAgentForm({ displayName: "", tokenLabel: "Default Agent Token" });
+      await loadPrincipals();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error creating Agent");
     }
-    setOneTimeSecret({ secret: body.secret, warning: body.warning });
-    setShowAddAgent(false);
-    setAgentForm({ displayName: "", tokenLabel: "Default Agent Token" });
-    await loadPrincipals();
   };
 
   const [editingId, setEditingId] = useState<string>();
@@ -1125,13 +1116,99 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
       </div>
 
       {oneTimeSecret && (
-        <div className="card" style={{ background: "rgba(16, 185, 129, 0.1)", borderColor: "#10b981", padding: "1rem" }}>
-          <strong style={{ color: "#10b981" }}>Credential Created</strong>
-          <p style={{ margin: "0.5rem 0", fontSize: "0.9rem" }}>{oneTimeSecret.warning}</p>
-          <code style={{ display: "block", background: "#000", padding: "0.5rem", borderRadius: "4px", fontSize: "1rem", wordBreak: "break-all" }}>
-            {oneTimeSecret.secret}
-          </code>
-          <button style={{ marginTop: "0.5rem" }} onClick={() => setOneTimeSecret(undefined)}>Done</button>
+        <div className="card" style={{ background: "#18241f", color: "#e3ebd8", border: "1px solid var(--green)", padding: "1.25rem", marginBottom: "1.5rem", borderRadius: "10px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <strong style={{ color: "#10b981", fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+              🎉 Agent Credential Created Successfully!
+            </strong>
+            <button className="secondary" style={{ padding: "3px 10px", fontSize: "12px" }} onClick={() => setOneTimeSecret(undefined)}>Done ✕</button>
+          </div>
+          <p style={{ margin: "0.75rem 0", fontSize: "13px", color: "#a0b5a8" }}>
+            {oneTimeSecret.warning || "Save this Bearer Token and MCP configuration now. The secret will not be displayed again."}
+          </p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginTop: "1rem" }}>
+            <div>
+              <span style={{ fontSize: "12px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Agent Bearer Token</span>
+              <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                <code style={{ background: "#0b120e", color: "#10b981", padding: "8px 12px", borderRadius: "6px", fontSize: "13px", flex: 1, wordBreak: "break-all" }}>
+                  {oneTimeSecret.secret}
+                </code>
+                <button
+                  type="button"
+                  className="refresh"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(oneTimeSecret.secret);
+                    alert("Copied Agent Bearer Token!");
+                  }}
+                  style={{ fontSize: "12px", whiteSpace: "nowrap" }}
+                >
+                  📋 Copy Token
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <span style={{ fontSize: "12px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>MCP Endpoint URL</span>
+              <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                <code style={{ background: "#0b120e", color: "#68d391", padding: "8px 12px", borderRadius: "6px", fontSize: "13px", flex: 1 }}>
+                  http://127.0.0.1:4310/mcp
+                </code>
+                <button
+                  type="button"
+                  className="refresh"
+                  onClick={() => {
+                    void navigator.clipboard.writeText("http://127.0.0.1:4310/mcp");
+                    alert("Copied MCP Endpoint URL!");
+                  }}
+                  style={{ fontSize: "12px", whiteSpace: "nowrap" }}
+                >
+                  📋 Copy URL
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: "1.25rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+              <span style={{ fontSize: "12px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                MCP Configuration Snippet (for Claude / Cursor / Antigravity)
+              </span>
+              <button
+                type="button"
+                className="refresh"
+                onClick={() => {
+                  const mcpConfig = JSON.stringify({
+                    mcpServers: {
+                      tandem: {
+                        url: "http://127.0.0.1:4310/mcp",
+                        headers: {
+                          Authorization: `Bearer ${oneTimeSecret.secret}`
+                        }
+                      }
+                    }
+                  }, null, 2);
+                  void navigator.clipboard.writeText(mcpConfig);
+                  alert("Copied Full MCP JSON Configuration!");
+                }}
+                style={{ fontSize: "12px" }}
+              >
+                📋 Copy Full MCP JSON Config
+              </button>
+            </div>
+            <pre style={{ background: "#0b120e", color: "#d1d5db", padding: "12px", borderRadius: "6px", fontSize: "12px", overflowX: "auto", margin: 0 }}>
+              {JSON.stringify({
+                mcpServers: {
+                  tandem: {
+                    url: "http://127.0.0.1:4310/mcp",
+                    headers: {
+                      Authorization: `Bearer ${oneTimeSecret.secret}`
+                    }
+                  }
+                }
+              }, null, 2)}
+            </pre>
+          </div>
         </div>
       )}
 
