@@ -11,7 +11,7 @@ const bootstrapIdentitiesSchema = z.array(z.object({
   displayName: z.string().min(1),
   roles: z.array(z.string()).min(1),
   projectKeys: z.array(z.string()).min(1),
-  capabilities: z.array(z.enum(["context:read", "artifact:write", "planning:write", "execution:write", "decision:request", "decision:resolve"])).min(1),
+  capabilities: z.array(z.enum(["context:read", "artifact:write", "planning:write", "execution:write", "decision:request", "decision:resolve", "identity:admin"])).min(1),
   token: z.string().min(32),
   expiresAt: z.iso.datetime().optional(),
 }));
