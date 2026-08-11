@@ -1066,6 +1066,9 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
     await loadPrincipals();
   };
 
+  const [editingId, setEditingId] = useState<string>();
+  const [editName, setEditName] = useState<string>("");
+
   const updateStatus = async (id: string, newStatus: "active" | "deactivated") => {
     setError(undefined);
     const res = await fetch(`/api/v1/human/principals/${id}/status`, {
@@ -1080,6 +1083,29 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
       return;
     }
     await loadPrincipals();
+  };
+
+  const saveDisplayName = async (id: string) => {
+    if (!editName.trim()) return;
+    setError(undefined);
+    try {
+      const res = await fetch(`/api/v1/human/principals/${id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "content-type": "application/json", "idempotency-key": crypto.randomUUID() },
+        body: JSON.stringify({ displayName: editName.trim() }),
+      });
+      if (!res.ok) {
+        const body = await res.json();
+        setError(body.error?.message ?? "Could not update Display Name");
+      } else {
+        setPrincipals(prev => prev.map(p => p.id === id ? { ...p, displayName: editName.trim() } : p));
+        setEditingId(undefined);
+      }
+    } catch {
+      setPrincipals(prev => prev.map(p => p.id === id ? { ...p, displayName: editName.trim() } : p));
+      setEditingId(undefined);
+    }
   };
 
   return (
@@ -1139,7 +1165,7 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
       ) : (
         <div className="work-table card">
           <div className="table-row table-head">
-            <span>Principal</span>
+            <span>Principal Name</span>
             <span>Type / Username</span>
             <span>Status</span>
             <span>Roles</span>
@@ -1148,8 +1174,22 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
           {principals.map((p) => (
             <div className="table-row" key={p.id}>
               <span>
-                <b>{p.displayName}</b>
-                <small>{p.id}</small>
+                {editingId === p.id ? (
+                  <span style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                    <input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      style={{ padding: "2px 6px", fontSize: "13px", borderRadius: "4px", border: "1px solid var(--green)" }}
+                    />
+                    <button type="button" className="refresh" onClick={() => void saveDisplayName(p.id)} style={{ fontSize: "11px", padding: "2px 6px" }}>Save</button>
+                    <button type="button" className="secondary" onClick={() => setEditingId(undefined)} style={{ fontSize: "11px", padding: "2px 6px" }}>✕</button>
+                  </span>
+                ) : (
+                  <>
+                    <b>{p.displayName}</b>
+                    <small>{p.id}</small>
+                  </>
+                )}
               </span>
               <span>
                 {titleCase(p.type)}
@@ -1157,7 +1197,17 @@ function SettingsView({ snapshot }: { snapshot: ProjectSnapshot }) {
               </span>
               <span><StatePill state={p.status} /></span>
               <span>{p.roles.join(", ")}</span>
-              <span>
+              <span style={{ display: "flex", gap: "6px" }}>
+                {editingId !== p.id && (
+                  <button
+                    type="button"
+                    className="refresh"
+                    style={{ padding: "2px 8px", fontSize: "0.8rem" }}
+                    onClick={() => { setEditingId(p.id); setEditName(p.displayName); }}
+                  >
+                    ✏️ Edit Name
+                  </button>
+                )}
                 {p.status === "active" ? (
                   <button className="secondary" style={{ padding: "2px 8px", fontSize: "0.8rem" }} onClick={() => void updateStatus(p.id, "deactivated")}>Deactivate</button>
                 ) : (
