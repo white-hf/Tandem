@@ -57,9 +57,12 @@ Human + Agent Conversation
 ### 2. Multi-Project & Workspace Flexibility
 - **Project Switcher & Creator**: Seamlessly switch between multiple projects in the sidebar or trigger the `Project Setup` modal to bootstrap a new project with GitHub repository bindings.
 
-### 3. Agent-First MCP Delivery Protocol
-- **Zero-Prompt Agent Onboarding**: Agents connect to `http://127.0.0.1:4310/mcp` via standard MCP config (`.mcp.json`) and call `get_project_context`, `confirm_understanding`, and `claim_issue` autonomously.
-- **Autonomous Continuous Mode**: Agents authorized with an overarching goal can plan cycles, create issues, attach evidence, and auto-verify non-material tasks within policy.
+### 3. Agent-First MCP Delivery Protocol & 100% Autonomous Continuous Mode
+- **Zero-Prompt Agent Onboarding**: Agents connect to `http://127.0.0.1:4310/mcp` via standard MCP config (`.mcp.json` / Codex `config.toml`) and call `get_project_context`, `confirm_understanding`, and `claim_issue` autonomously.
+- **100% Autonomous Continuous Execution**: When granted an overarching goal by Human in conversation, Agents are authorized to plan cycles (`plan_cycle`), create structured issues (`create_issue`), claim (`claim_issue`), execute code, attach evidence (`attach_evidence`), and auto-verify non-material tasks without human chat prompting.
+- **Expanded MCP Toolset**: Includes `refresh_session_context` (hot-refresh baseline context digests without interrupting agent sessions) and `finish_session` (cleanly release claim locks and close completed sessions).
+- **Streamlined High-Density UI**: Compact page headers and single-line active Cycle banners maximize screen space, allowing 100% of Kanban columns, Sprints, and Work Items to render above the fold.
+- **Human Oversight Sprint Control**: Issue detail drawer features an instant `Iteration / Cycle` dropdown selector allowing humans to assign or move issues across cycles (with automatic audit-trail lock on `done` and `cancelled` issues). Cycle header includes an `✏️ Edit Cycle` modal for quick goal and DoD adjustments.
 
 ---
 
