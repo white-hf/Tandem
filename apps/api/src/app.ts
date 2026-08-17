@@ -332,6 +332,13 @@ export async function buildApp(
     return reply.status(201).send(await mutateWithIdempotency(runtime, restIdempotency(request, actor, 201), (service) => service.createIssue({ ...input, source: "human_web", actorId: actor.id, actorType: "human" })));
   });
 
+  app.patch<{ Params: { issueKey: string } }>("/v1/human/issues/:issueKey", async (request) => {
+    const actor = requireActor(request, "human", "planning:write");
+    const input = updateIssueInput.parse(request.body);
+    requireProjectScope(actor, runtime.read((service) => service.getProjectForIssue(request.params.issueKey).key));
+    return mutateWithIdempotency(runtime, restIdempotency(request, actor, 200), (service) => service.updateIssue(request.params.issueKey, { ...input, actorId: actor.id, actorType: "human" }));
+  });
+
   app.post("/v1/agent/sessions", async (request, reply) => {
     const actor = requireActor(request, "agent", "execution:write");
     const input = startSessionInput.parse(request.body);

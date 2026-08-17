@@ -481,6 +481,7 @@ export const createIssueInput = z.object({
 export type CreateIssueInput = z.infer<typeof createIssueInput>;
 
 export const updateIssueInput = z.object({
+  cycleId: z.string().nullable().optional(),
   description: z.string().min(3).optional(),
   acceptanceCriteria: z.array(z.string().min(3)).optional(),
   details: quickWorkDetailsInput.optional(),

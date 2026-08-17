@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { Artifact, ArtifactRevision, Issue, IssueType, MaterialRiskFlag, Project, ProjectSnapshot } from "@tandem/contracts";
+import { ProjectLoadCoordinator } from "./project-navigation";
 
 type View = "attention" | "work" | "artifacts" | "activity" | "settings";
 type SnapshotArtifact = ProjectSnapshot["artifacts"][number];
@@ -39,11 +40,15 @@ export function App() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
   const [drawerExpanded, setDrawerExpanded] = useState(false);
+  const navigation = useRef(new ProjectLoadCoordinator()).current;
+  const renderedProjectKey = useRef<string | undefined>(undefined);
 
-  const load = async (preferredProjectKey?: string) => {
+  const load = useCallback(async (preferredProjectKey?: string) => {
+    const request = navigation.begin(preferredProjectKey);
     try {
       const projectsResponse = await fetch("/api/v1/projects", { credentials: "include" });
       const projectsBody = (await projectsResponse.json()) as { data?: Project[]; error?: { message: string } };
+      if (!navigation.isLatest(request)) return;
       if (projectsResponse.status === 401) {
         setAuthRequired(true);
         setError(undefined);
@@ -58,14 +63,14 @@ export function App() {
         setError(undefined);
         return;
       }
-      const projectKey = preferredProjectKey && projectsBody.data.some((project) => project.key === preferredProjectKey)
-        ? preferredProjectKey
-        : selectedProjectKey && projectsBody.data.some((project) => project.key === selectedProjectKey)
-          ? selectedProjectKey
-          : projectsBody.data[0]!.key;
+      const projectKey = navigation.resolve(request, projectsBody.data.map((project) => project.key), projectKeyFromPath());
+      if (!projectKey) return;
       const response = await fetch(`/api/v1/projects/${encodeURIComponent(projectKey)}/snapshot`, { credentials: "include" });
       const body = (await response.json()) as { data?: ProjectSnapshot; error?: { message: string } };
+      if (!navigation.isLatest(request, projectKey)) return;
       if (!response.ok || !body.data) throw new Error(body.error?.message ?? "Could not load Project delivery context");
+      const projectChanged = renderedProjectKey.current !== projectKey;
+      renderedProjectKey.current = projectKey;
       setSnapshot(body.data);
       setSelectedProjectKey(projectKey);
       const pathIssueKey = issueKeyFromPath();
@@ -75,29 +80,36 @@ export function App() {
         setSelectedArtifact(undefined);
         setVerificationMode(isVerificationPath() && pathIssue.displayState === "review");
       } else {
+        if (projectChanged) {
+          setSelectedIssue(undefined);
+          setSelectedArtifact(undefined);
+          setVerificationMode(false);
+          setDrawerExpanded(false);
+        }
         window.history.replaceState({}, "", `/projects/${projectKey}`);
       }
       setAuthRequired(false);
       setError(undefined);
     } catch (cause) {
+      if (!navigation.isLatest(request)) return;
       setError(cause instanceof Error ? cause.message : "Could not load Tandem");
     }
-  };
+  }, [navigation]);
 
   useEffect(() => {
     const syncPath = () => { void load(projectKeyFromPath()); };
     syncPath();
     window.addEventListener("popstate", syncPath);
     return () => window.removeEventListener("popstate", syncPath);
-  }, []);
+  }, [load]);
   useEffect(() => {
     if (authRequired) return;
     const source = new EventSource("/api/v1/events");
-    const refresh = () => { void load(selectedProjectKey); };
+    const refresh = () => { void load(navigation.currentProjectKey); };
     source.addEventListener("state.changed", refresh);
     source.addEventListener("git.updated", refresh);
     return () => source.close();
-  }, [authRequired, selectedProjectKey]);
+  }, [authRequired, load, navigation]);
 
   const [loginMode, setLoginMode] = useState<"password" | "token">("password");
   const [username, setUsername] = useState("owner");
@@ -180,6 +192,15 @@ export function App() {
     window.history.pushState({}, "", `/projects/${snapshot.project.key}/work/${issue.key}${verify ? "/verify" : ""}`);
   };
   const selectArtifact = (artifact: SnapshotArtifact) => { setSelectedArtifact(artifact); setSelectedIssue(undefined); setVerificationMode(false); };
+  const selectProject = (projectKey: string) => {
+    setSelectedProjectKey(projectKey);
+    setSelectedIssue(undefined);
+    setSelectedArtifact(undefined);
+    setVerificationMode(false);
+    setDrawerExpanded(false);
+    window.history.pushState({}, "", `/projects/${projectKey}`);
+    void load(projectKey);
+  };
   const resolveDecision = async (requestId: string, outcome: "approved" | "changes_requested") => {
     const response = await fetch(`/api/v1/human/decision-requests/${requestId}`, {
       method: "POST",
@@ -238,7 +259,7 @@ export function App() {
                 if (event.target.value === "__NEW__") {
                   setShowCreateProject(true);
                 } else {
-                  void load(event.target.value);
+                  selectProject(event.target.value);
                 }
               }}
               style={{
@@ -635,6 +656,23 @@ function CycleView({ snapshot, onIssue }: { snapshot: ProjectSnapshot; onIssue: 
               <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                 <StatePill state={currentCycle.state} />
                 <h3 style={{ margin: 0 }}>Cycle {currentCycle.number}: {currentCycle.name}</h3>
+                <button
+                  type="button"
+                  className="secondary"
+                  style={{ padding: "2px 8px", fontSize: "12px", borderRadius: "6px" }}
+                  onClick={() => {
+                    setCycleForm({
+                      name: currentCycle.name,
+                      goal: currentCycle.goal,
+                      startsOn: currentCycle.startsOn ?? "",
+                      endsOn: currentCycle.endsOn ?? "",
+                      dod: currentCycle.definitionOfDone.join("\n")
+                    });
+                    setShowPropose(true);
+                  }}
+                >
+                  ✏️ Edit Cycle
+                </button>
               </div>
               <div className="revision-chip" style={{ padding: "4px 8px", fontSize: "12px" }}>Plan r<strong>{currentCycle.planRevision}</strong> <small>{currentCycle.planDigest.slice(0, 8)}</small></div>
             </div>
@@ -947,6 +985,27 @@ function IssueDetailContent({ issue, snapshot }: { issue: Issue; snapshot: Proje
         <strong>{assigneeName ? `🔒 ${assigneeName} (${new Date(issue.activeClaim!.claimedAt).toLocaleString()})` : "— Unclaimed"}</strong>
         <span>State / Approver</span>
         <strong>{issue.displayState === "done" ? "✓ Approved by pilot-owner" : issue.displayState}</strong>
+        <span>Iteration / Cycle</span>
+        <strong>
+          <select
+            style={{ padding: "2px 6px", borderRadius: "5px", border: "1px solid var(--line)", fontSize: "12px", background: "#fff" }}
+            value={issue.cycleId ?? "NONE"}
+            onChange={async (e) => {
+              const val = e.target.value === "NONE" ? null : e.target.value;
+              await fetch(`/api/v1/human/issues/${issue.key}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cycleId: val })
+              });
+              window.location.reload();
+            }}
+          >
+            <option value="NONE">— Unscheduled Backlog —</option>
+            {snapshot.cycles.map((c) => (
+              <option key={c.id} value={c.id}>Cycle {c.number}: {c.name} [{c.state.toUpperCase()}]</option>
+            ))}
+          </select>
+        </strong>
       </div>
     </PanelSection>
     <PanelSection title="Original intake"><blockquote>{issue.intake.originalStatement}</blockquote><small>{titleCase(issue.intake.source)} · {issue.intake.capturedBy.actorType} {creatorName}</small>{detailEntries.map(([key, value]) => <div className="intake-detail" key={key}><span>{titleCase(key)}</span><p>{value}</p></div>)}</PanelSection>

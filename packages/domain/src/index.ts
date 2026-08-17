@@ -794,6 +794,15 @@ export class TandemService {
     const issue = this.requireIssue(issueKey);
     if (["done", "cancelled"].includes(issue.baseState)) throw new DomainError("ISSUE_NOT_EDITABLE", `Issue in ${issue.baseState} cannot be enriched`);
     const actorType = input.actorType ?? "agent";
+    if (input.cycleId !== undefined) {
+      if (input.cycleId === null) {
+        delete issue.cycleId;
+      } else {
+        const cycle = this.store.cycles.find((item) => item.id === input.cycleId && item.projectId === issue.projectId);
+        if (!cycle) throw new DomainError("CYCLE_NOT_FOUND", "Specified Cycle does not exist in this Project");
+        issue.cycleId = input.cycleId;
+      }
+    }
     if (input.description !== undefined) issue.description = input.description;
     if (input.acceptanceCriteria !== undefined) issue.acceptanceCriteria = clone(input.acceptanceCriteria);
     if (input.details !== undefined) issue.intake.details = { ...issue.intake.details, ...clone(input.details) };
