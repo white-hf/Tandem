@@ -54,6 +54,8 @@ Before substantive implementation:
 - Initiative is optional; Project, Milestone, Cycle, Issue/Sub-issue, and dependency are distinct concepts.
 - Cycles are optional timeboxes and are not releases.
 - Autonomous Continuous Mode: When granted an overarching goal by Human in conversation, Agents are authorized to autonomously plan Cycles (`plan_cycle`), create structured Issues (`create_issue`), claim (`claim_issue`), execute, attach Evidence (`attach_evidence`), and auto-verify non-material tasks without human chat prompting.
+- Artifact Baseline Protocol: Agent-created document revisions start as `proposed`. Under Autonomous Continuous Mode, Agents can handle baselines via two paths: (1) Call `request_human_decision` for proposed Artifacts; non-material policy automatically resolves the decision to establish `baselined` context without prompting Human. (2) Directly implement work against existing `baselined` Artifacts for routine tasks without re-proposing full PRD changes.
+- Session Lifecycle Protocol: Agents should call `refresh_session_context` to pull new baselines when context updates, and call `finish_session` cleanly upon handoff completion.
 - Agents may plan and execute inside policy but cannot impersonate a Human decision.
 - One Issue has at most one active claim.
 - An Issue is Ready only when dependencies and context requirements are satisfied.
