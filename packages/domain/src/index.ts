@@ -717,6 +717,11 @@ export class TandemService {
       };
       this.store.cycles.push(cycle);
     }
+    if (input.state === "active") {
+      const existingActive = this.store.cycles.find((item) => item.projectId === project.id && item.state === "active");
+      if (existingActive && existingActive.id !== cycle.id) existingActive.state = "completed";
+      project.activeCycleId = cycle.id;
+    }
     this.record("agent", input.actorId, "cycle.planned", "cycle", cycle.id, `${cycle.name} plan revision ${cycle.planRevision}`);
     return this.result(clone(cycle), ["create_issue", "request_human_decision"], [], `/cycles/${cycle.id}`);
   }
@@ -959,6 +964,28 @@ export class TandemService {
     this.record("agent", session.agentId, "session.context_confirmed", "agent_session", session.id, "Confirmed current Artifact and code context");
     const next = session.issueId ? ["claim_issue", "request_human_decision"] : ["plan_cycle", "create_issue", "upsert_artifact_draft"];
     return this.result(clone(session), next, input.openQuestions.length ? ["Open questions should be resolved before risky changes"] : [], `/sessions/${session.id}`);
+  }
+
+  refreshSessionContext(sessionId: string): CommandResult<AgentSession> {
+    const session = this.requireSession(sessionId);
+    session.contextDigest = this.projectContextDigest(session.projectId);
+    session.stale = false;
+    this.record("agent", session.agentId, "session.refreshed", "agent_session", session.id, "Refreshed session context digest to latest project state");
+    return this.result(clone(session), ["claim_issue", "record_checkpoint", "submit_handoff"], [], `/sessions/${session.id}`);
+  }
+
+  finishSession(sessionId: string, summary?: string): CommandResult<AgentSession> {
+    const session = this.requireSession(sessionId);
+    session.state = "completed";
+    if (session.issueId) {
+      const issue = this.store.issues.find((item) => item.id === session.issueId);
+      if (issue && issue.activeClaim?.sessionId === session.id) {
+        delete issue.activeClaim;
+        issue.version += 1;
+      }
+    }
+    this.record("agent", session.agentId, "session.finished", "agent_session", session.id, summary ?? "Session completed cleanly");
+    return this.result(clone(session), [], [], `/sessions/${session.id}`);
   }
 
   claimIssue(issueKey: string, input: ClaimIssueInput): CommandResult<Issue> {

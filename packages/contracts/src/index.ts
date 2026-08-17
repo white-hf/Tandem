@@ -62,7 +62,7 @@ export type ArtifactRevisionState =
   | "drifted"
   | "archived";
 
-export type SessionState = "onboarding" | "active" | "waiting_human" | "handed_off" | "finished";
+export type SessionState = "onboarding" | "active" | "waiting_human" | "handed_off" | "finished" | "completed";
 export type DecisionAuthority =
   | "human_decision"
   | "human_stated"
@@ -420,6 +420,17 @@ export const artifactCheckpointInput = z.object({
 });
 export type ArtifactCheckpointInput = z.infer<typeof artifactCheckpointInput>;
 
+export const refreshSessionInput = z.object({
+  sessionId: z.string().min(1),
+});
+export type RefreshSessionInput = z.infer<typeof refreshSessionInput>;
+
+export const finishSessionInput = z.object({
+  sessionId: z.string().min(1),
+  summary: z.string().min(5).optional(),
+});
+export type FinishSessionInput = z.infer<typeof finishSessionInput>;
+
 export const cyclePlanInput = z.object({
   projectKey: z.string().min(2),
   name: z.string().min(3),
@@ -427,7 +438,7 @@ export const cyclePlanInput = z.object({
   startsOn: z.iso.date(),
   endsOn: z.iso.date(),
   definitionOfDone: z.array(z.string().min(3)).min(1),
-  state: z.enum(["draft", "proposed"]).default("proposed"),
+  state: z.enum(["draft", "proposed", "active"]).default("proposed"),
 });
 export type CyclePlanInput = z.infer<typeof cyclePlanInput>;
 
