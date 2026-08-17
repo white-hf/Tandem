@@ -988,7 +988,8 @@ function IssueDetailContent({ issue, snapshot }: { issue: Issue; snapshot: Proje
         <span>Iteration / Cycle</span>
         <strong>
           <select
-            style={{ padding: "2px 6px", borderRadius: "5px", border: "1px solid var(--line)", fontSize: "12px", background: "#fff" }}
+            disabled={["done", "cancelled"].includes(issue.displayState || issue.baseState)}
+            style={{ padding: "2px 6px", borderRadius: "5px", border: "1px solid var(--line)", fontSize: "12px", background: ["done", "cancelled"].includes(issue.displayState || issue.baseState) ? "#f0f2f0" : "#fff" }}
             value={issue.cycleId ?? "NONE"}
             onChange={async (e) => {
               const val = e.target.value === "NONE" ? null : e.target.value;
