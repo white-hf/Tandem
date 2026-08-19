@@ -169,6 +169,7 @@ pnpm --filter @tandem/web build
 
 ### 2. Operations & Engineering Runbooks
 - [Pilot Operations Runbook](docs/runbooks/pilot-operations.md) — Database backup, restore drill, and health monitoring.
+- [Database Operations & Query Guide](docs/runbooks/database-operations.md) — Fast CLI access, table queries, and GUI connection methods.
 - [Coding Agent Setup Guide](docs/runbooks/coding-agent-setup.md) — MCP configuration for Codex CLI, Claude, and IDE agents.
 - [First Project Setup](docs/runbooks/first-project-setup.md) — Multi-project onboarding and GitHub repository binding.
 - [Developer Workflow](docs/developer-workflow.md) — Local development, iteration lifecycle, and release processes.
