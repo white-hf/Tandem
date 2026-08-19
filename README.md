@@ -110,9 +110,31 @@ claude mcp add tandem http://127.0.0.1:4310/mcp --header "Authorization: Bearer 
 
 ---
 
-## 🐳 Docker Compose Deployment (Production Pilot)
+## ⚡️ One-Click Startup & Management Script (`tandem.sh`)
 
-To launch the formal Docker Compose Pilot stack with PostgreSQL persistence:
+Tandem provides an out-of-the-box shell script for one-click setup, launch, and management:
+
+```bash
+# 1. One-click build and launch (Docker Pilot stack with PostgreSQL)
+./tandem.sh up
+
+# 2. Inspect container status & API health
+./tandem.sh status
+
+# 3. View real-time logs
+./tandem.sh logs api    # View API/MCP service logs
+./tandem.sh logs web    # View Web UI logs
+
+# 4. Restart or stop
+./tandem.sh restart
+./tandem.sh down
+```
+
+---
+
+## 🐳 Docker Compose Deployment (Manual Command)
+
+Alternatively, launch the Docker Compose Pilot stack directly:
 
 ```bash
 POSTGRES_PASSWORD=tandem_pilot_password \
