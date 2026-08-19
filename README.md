@@ -157,11 +157,18 @@ pnpm --filter @tandem/web build
 
 ---
 
-## 📄 Core Product & Architecture Baselines
+## 📄 Core Documentation Baselines & Runbooks
 
-- [MVP PRD](docs/prd/tandem-mvp-prd.md)
-- [Information Architecture](docs/design/information-architecture.md)
-- [System Design](docs/design/system-design.md)
-- [Physical Deployment Architecture](docs/design/physical-deployment-architecture.md)
-- [Database Data Dictionary](docs/design/database-data-dictionary.md)
-- [Repository Delivery Guidelines](AGENTS.md)
+### 1. Architecture & Design Baselines
+- [MVP PRD](docs/prd/tandem-mvp-prd.md) — Product requirements and boundary definitions.
+- [Information Architecture](docs/design/information-architecture.md) — 5-Hub navigation and state taxonomy.
+- [System Design](docs/design/system-design.md) — Core domain rules, MCP protocols, and execution lifecycle.
+- [Physical Deployment Architecture](docs/design/physical-deployment-architecture.md) — Container topology, network routing, and security.
+- [Database Data Dictionary](docs/design/database-data-dictionary.md) — PostgreSQL hybrid schema, tables, fields, and auto-migration mechanisms.
+- [Repository Delivery Guidelines](AGENTS.md) — Rules of engagement for autonomous AI agents.
+
+### 2. Operations & Engineering Runbooks
+- [Pilot Operations Runbook](docs/runbooks/pilot-operations.md) — Database backup, restore drill, and health monitoring.
+- [Coding Agent Setup Guide](docs/runbooks/coding-agent-setup.md) — MCP configuration for Codex CLI, Claude, and IDE agents.
+- [First Project Setup](docs/runbooks/first-project-setup.md) — Multi-project onboarding and GitHub repository binding.
+- [Developer Workflow](docs/developer-workflow.md) — Local development, iteration lifecycle, and release processes.
