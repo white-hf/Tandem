@@ -162,4 +162,5 @@ pnpm --filter @tandem/web build
 - [MVP PRD](docs/prd/tandem-mvp-prd.md)
 - [Information Architecture](docs/design/information-architecture.md)
 - [System Design](docs/design/system-design.md)
+- [Physical Deployment Architecture](docs/design/physical-deployment-architecture.md)
 - [Repository Delivery Guidelines](AGENTS.md)
