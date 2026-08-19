@@ -163,4 +163,5 @@ pnpm --filter @tandem/web build
 - [Information Architecture](docs/design/information-architecture.md)
 - [System Design](docs/design/system-design.md)
 - [Physical Deployment Architecture](docs/design/physical-deployment-architecture.md)
+- [Database Data Dictionary](docs/design/database-data-dictionary.md)
 - [Repository Delivery Guidelines](AGENTS.md)
