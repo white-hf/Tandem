@@ -173,3 +173,8 @@ pnpm --filter @tandem/web build
 - [Coding Agent Setup Guide](docs/runbooks/coding-agent-setup.md) — MCP configuration for Codex CLI, Claude, and IDE agents.
 - [First Project Setup](docs/runbooks/first-project-setup.md) — Multi-project onboarding and GitHub repository binding.
 - [Developer Workflow](docs/developer-workflow.md) — Local development, iteration lifecycle, and release processes.
+
+### 3. Portfolio & Engineering Narratives
+- [Project Showcase & Architecture Narrative (EN)](docs/project-linkedin-showcase.md) — English engineering portfolio narrative.
+- [Project Showcase & Architecture Narrative (ZH)](docs/project-linkedin-showcase.zh.md) — 中文项目背景与技术亮点深度解析.
+- [LinkedIn Profile Ready Copy (<2000 chars)](docs/linkedin-description-2000chars.md) — Concise ready-to-paste copy for LinkedIn projects section.
